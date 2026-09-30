@@ -1,0 +1,112 @@
+---
+export const prerender = false;
+
+const ADMIN_COOKIE = 'devlog_admin';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const password = form.get('password')?.toString() ?? '';
+  const adminPw = import.meta.env.ADMIN_PASSWORD;
+  const sessionSecret = import.meta.env.SESSION_SECRET;
+
+  if (password === adminPw) {
+    Astro.cookies.set(ADMIN_COOKIE, sessionSecret, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7, // 7일
+      secure: import.meta.env.PROD,
+    });
+    return Astro.redirect('/admin');
+  }
+
+  return new Response(null, {
+    status: 303,
+    headers: { Location: '/admin/login?error=1' },
+  });
+}
+
+const hasError = Astro.url.searchParams.get('error');
+---
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f0f13;
+      color: #e2e2f0;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .box {
+      width: 100%;
+      max-width: 360px;
+      padding: 2.5rem;
+      background: #16161d;
+      border: 1px solid #2a2a3a;
+      border-radius: 1rem;
+    }
+    .logo {
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: #6366f1;
+      margin-bottom: 1.5rem;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem; }
+    p { font-size: 0.875rem; color: #8888aa; margin-bottom: 1.5rem; }
+    label { display: block; font-size: 0.75rem; color: #8888aa; margin-bottom: 0.4rem; font-family: monospace; }
+    input[type=password] {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      background: #1e1e2a;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.5rem;
+      color: #e2e2f0;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type=password]:focus { border-color: #6366f1; }
+    .error {
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: #f87171;
+    }
+    button {
+      margin-top: 1.25rem;
+      width: 100%;
+      padding: 0.625rem;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">◆ bubblestone/devlog</div>
+    <h1>관리자 로그인</h1>
+    <p>비밀번호를 입력하세요</p>
+    <form method="POST">
+      <label for="pw">PASSWORD</label>
+      <input id="pw" type="password" name="password" autofocus autocomplete="current-password" />
+      {hasError && <p class="error">비밀번호가 올바르지 않습니다</p>}
+      <button type="submit">로그인</button>
+    </form>
+  </div>
+</body>
+</html>

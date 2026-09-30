@@ -1,0 +1,185 @@
+---
+export const prerender = false;
+
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts'))
+  .sort((a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf());
+---
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — DevLog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f0f13; color: #e2e2f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+    .header {
+      background: rgba(15,15,19,0.9);
+      border-bottom: 1px solid #2a2a3a;
+      padding: 0 1.5rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo { font-family: monospace; font-size: 0.875rem; color: #6366f1; display: flex; align-items: center; gap: 0.5rem; }
+    .logo a { color: #8888aa; text-decoration: none; }
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+    .btn {
+      padding: 0.375rem 0.875rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-ghost { background: transparent; color: #8888aa; border: 1px solid #2a2a3a; }
+    .btn-ghost:hover { border-color: #6366f1; color: #fff; }
+    .btn-danger { background: transparent; color: #f87171; border: 1px solid #2a2a3a; }
+    .btn-danger:hover { background: #7f1d1d22; border-color: #f87171; }
+
+    main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+    .subtitle { font-size: 0.875rem; color: #8888aa; margin-bottom: 2rem; }
+
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card {
+      background: #16161d;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .stat-label { font-size: 0.75rem; color: #8888aa; font-family: monospace; margin-bottom: 0.25rem; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: #fff; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .section-title { font-size: 1rem; font-weight: 600; color: #fff; }
+
+    .post-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .post-item {
+      background: #16161d;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .post-info { flex: 1; min-width: 0; }
+    .post-title { font-size: 0.9rem; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.25rem; }
+    .post-meta { font-size: 0.75rem; color: #8888aa; font-family: monospace; }
+    .post-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.4rem; }
+    .tag { background: #1e1e2a; border: 1px solid #2a2a3a; border-radius: 0.25rem; padding: 0.1rem 0.4rem; font-size: 0.7rem; color: #8888aa; font-family: monospace; }
+    .post-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+    .hint {
+      margin-top: 2.5rem;
+      background: #16161d;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .hint h3 { font-size: 0.875rem; font-weight: 600; color: #6366f1; margin-bottom: 0.75rem; }
+    .hint code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      background: #0f0f13;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.375rem;
+      padding: 0.75rem 1rem;
+      display: block;
+      color: #a78bfa;
+      line-height: 1.6;
+      margin-top: 0.5rem;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <span>◆</span>
+      <span>Admin</span>
+      <span style="color: #2a2a3a;">|</span>
+      <a href="/">블로그 보기 →</a>
+    </div>
+    <div class="header-right">
+      <form method="POST" action="/admin/logout">
+        <button type="submit" class="btn btn-danger">로그아웃</button>
+      </form>
+    </div>
+  </header>
+
+  <main>
+    <h1>대시보드</h1>
+    <p class="subtitle">글 작성은 MDX 파일로 관리됩니다</p>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">TOTAL POSTS</div>
+        <div class="stat-value">{posts.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TAGS</div>
+        <div class="stat-value">{new Set(posts.flatMap(p => p.data.tags ?? [])).size}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">LATEST</div>
+        <div class="stat-value" style="font-size: 1rem; padding-top: 0.4rem;">
+          {posts[0] ? new Date(posts[0].data.date).toLocaleDateString('ko-KR') : '—'}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">글 목록</span>
+      <a href="/posts" target="_blank" class="btn btn-ghost">공개 목록 보기</a>
+    </div>
+
+    <div class="post-list">
+      {posts.map(post => (
+        <div class="post-item">
+          <div class="post-info">
+            <div class="post-title">{post.data.title}</div>
+            <div class="post-meta">{post.id} · {new Date(post.data.date).toLocaleDateString('ko-KR')}</div>
+            <div class="post-tags">
+              {(post.data.tags ?? []).map((t: string) => <span class="tag">{t}</span>)}
+            </div>
+          </div>
+          <div class="post-actions">
+            <a href={`/posts/${post.id}`} target="_blank" class="btn btn-ghost" style="font-size: 0.75rem; padding: 0.25rem 0.625rem;">보기</a>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="hint">
+      <h3>새 글 작성 방법</h3>
+      <p style="font-size: 0.8rem; color: #8888aa; margin-bottom: 0.5rem;">아래 경로에 <code>.md</code> 또는 <code>.mdx</code> 파일을 추가하면 자동으로 빌드됩니다.</p>
+      <code>src/content/posts/파일명.md
+
+---
+title: "글 제목"
+description: "한 줄 설명"
+date: "2024-12-20"
+tags: ["태그1", "태그2"]
+techs: ["React", "TypeScript"]
+---
+
+본문 내용 (Markdown)</code>
+    </div>
+  </main>
+</body>
+</html>

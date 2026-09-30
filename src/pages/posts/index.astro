@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts'))
+  .sort((a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf());
+
+const allTags = [...new Set(posts.flatMap(p => p.data.tags ?? []))].sort();
+---
+
+<BaseLayout title="Posts">
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-white mb-2">All Posts</h1>
+    <p class="text-sm" style="color: var(--text-muted);">{posts.length}개의 글</p>
+  </div>
+
+  <!-- Tag filter -->
+  <div class="flex flex-wrap gap-2 mb-8">
+    <a href="/posts" class="tag-badge" style="border-color: var(--accent); color: var(--accent);">All</a>
+    {allTags.map(tag => (
+      <a href={`/tags/${tag}`} class="tag-badge">{tag}</a>
+    ))}
+  </div>
+
+  <div class="space-y-4">
+    {posts.map(post => (
+      <a href={`/posts/${post.id}`} class="card block group">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              {(post.data.tags ?? []).slice(0, 4).map((tag: string) => (
+                <span class="tag-badge">{tag}</span>
+              ))}
+            </div>
+            <h2 class="text-base font-semibold text-white group-hover:text-[var(--accent)] transition-colors mb-1 truncate">
+              {post.data.title}
+            </h2>
+            <p class="text-sm line-clamp-1" style="color: var(--text-muted);">{post.data.description}</p>
+          </div>
+          <p class="text-xs font-mono whitespace-nowrap pt-0.5 shrink-0" style="color: var(--text-muted);">
+            {new Date(post.data.date).toLocaleDateString('ko-KR')}
+          </p>
+        </div>
+      </a>
+    ))}
+  </div>
+</BaseLayout>

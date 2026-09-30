@@ -1,0 +1,65 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const { title, description = 'BubbleStone DevLog — 개발 경험과 기술 아키텍처 기록', ogImage } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="canonical" href={canonicalURL} />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title} | BubbleStone DevLog</title>
+    <meta name="description" content={description} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={`${title} | BubbleStone DevLog`} />
+    <meta property="og:description" content={description} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} | BubbleStone DevLog`} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+  <body>
+    <header class="sticky top-0 z-50 border-b" style="background: rgba(15,15,19,0.85); backdrop-filter: blur(12px); border-color: var(--border);">
+      <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2 font-mono font-bold text-sm" style="color: var(--accent);">
+          <span class="text-lg">◆</span>
+          <span>bubblestone</span>
+          <span style="color: var(--text-muted);">/devlog</span>
+        </a>
+        <nav class="flex items-center gap-6 text-sm" style="color: var(--text-muted);">
+          <a href="/posts" class="hover:text-white transition-colors">Posts</a>
+          <a href="/tech" class="hover:text-white transition-colors">TechMap</a>
+          <a href="/tags" class="hover:text-white transition-colors">Tags</a>
+          <a href="/about" class="hover:text-white transition-colors">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-10">
+      <slot />
+    </main>
+
+    <footer class="mt-20 py-8 text-center text-sm" style="color: var(--text-muted); border-top: 1px solid var(--border);">
+      <p>© 2024 BubbleStone — Built with Astro</p>
+    </footer>
+  </body>
+</html>

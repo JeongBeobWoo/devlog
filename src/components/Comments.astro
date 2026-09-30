@@ -1,0 +1,37 @@
+---
+const repo = import.meta.env.GISCUS_REPO ?? '';
+const repoId = import.meta.env.GISCUS_REPO_ID ?? '';
+const categoryId = import.meta.env.GISCUS_CATEGORY_ID ?? '';
+
+const configured = repo && repoId && categoryId;
+---
+
+{configured ? (
+  <div class="mt-16 pt-8" style="border-top: 1px solid var(--border);">
+    <h2 class="text-base font-semibold text-white mb-6">댓글</h2>
+    <script
+      is:inline
+      src="https://giscus.app/client.js"
+      data-repo={repo}
+      data-repo-id={repoId}
+      data-category="General"
+      data-category-id={categoryId}
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="bottom"
+      data-theme="preferred_color_scheme"
+      data-lang="ko"
+      crossorigin="anonymous"
+      async
+    ></script>
+  </div>
+) : (
+  <div class="mt-16 pt-8" style="border-top: 1px solid var(--border);">
+    <p class="text-sm" style="color: var(--text-muted);">
+      댓글 활성화 대기 중 — <code style="color: #a78bfa; background: var(--bg-3); padding: 0.1rem 0.3rem; border-radius: 0.25rem;">.env</code>에
+      GISCUS_CATEGORY_ID를 추가하면 활성화됩니다.
+    </p>
+  </div>
+)}
