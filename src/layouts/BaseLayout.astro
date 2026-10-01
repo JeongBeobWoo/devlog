@@ -22,42 +22,170 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <title>{title} | BubbleStone DevLog</title>
     <meta name="description" content={description} />
 
-    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={`${title} | BubbleStone DevLog`} />
     <meta property="og:description" content={description} />
     {ogImage && <meta property="og:image" content={ogImage} />}
 
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={`${title} | BubbleStone DevLog`} />
     <meta name="twitter:description" content={description} />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <style>
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        border-bottom: 1px solid var(--border);
+        background: rgba(15,15,19,0.85);
+        backdrop-filter: blur(12px);
+      }
+      html.light .site-header {
+        background: rgba(248,248,252,0.9);
+      }
+      .header-inner {
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        height: 3.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .site-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 0.875rem;
+        color: var(--accent);
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+      .site-logo .muted { color: var(--text-muted); }
+
+      /* 데스크탑 nav */
+      .desktop-nav {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+      .desktop-nav a { text-decoration: none; transition: color 0.2s; }
+      .desktop-nav a:hover { color: var(--text); }
+      .desktop-nav .admin-link { color: var(--accent); opacity: 0.7; }
+
+      /* 햄버거 — 모바일만 표시 */
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+      }
+      .hamburger span {
+        display: block;
+        width: 22px;
+        height: 2px;
+        background: var(--text-muted);
+        border-radius: 2px;
+        transition: all 0.2s;
+      }
+
+      /* 모바일 드로어 */
+      .mobile-nav {
+        display: none;
+        flex-direction: column;
+        gap: 0;
+        border-top: 1px solid var(--border);
+        background: var(--bg-2);
+      }
+      .mobile-nav a {
+        display: block;
+        padding: 0.875rem 1.5rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        border-bottom: 1px solid var(--border);
+        transition: color 0.2s, background 0.2s;
+      }
+      .mobile-nav a:hover { color: var(--text); background: var(--bg-3); }
+      .mobile-nav .theme-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.875rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+      .mobile-nav.open { display: flex; }
+
+      @media (max-width: 640px) {
+        .desktop-nav { display: none; }
+        .hamburger { display: flex; }
+      }
+
+      /* theme-toggle 버튼 공통 */
+      .theme-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        color: var(--text-muted);
+        padding: 0;
+        line-height: 1;
+      }
+    </style>
   </head>
   <body>
-    <header class="sticky top-0 z-50 border-b" style="background: rgba(15,15,19,0.85); backdrop-filter: blur(12px); border-color: var(--border);">
-      <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-        <a href="/" class="flex items-center gap-2 font-mono font-bold text-sm" style="color: var(--accent);">
-          <span class="text-lg">◆</span>
+    <header class="site-header">
+      <div class="header-inner">
+        <a href="/" class="site-logo">
+          <span>◆</span>
           <span>bubblestone</span>
-          <span style="color: var(--text-muted);">/devlog</span>
+          <span class="muted">/devlog</span>
         </a>
-        <nav class="flex items-center gap-6 text-sm" style="color: var(--text-muted);">
-          <a href="/posts" class="hover:text-white transition-colors">Posts</a>
-          <a href="/tech" class="hover:text-white transition-colors">TechMap</a>
-          <a href="/tags" class="hover:text-white transition-colors">Tags</a>
-          <a href="/about" class="hover:text-white transition-colors">About</a>
-          <button id="theme-toggle" title="테마 전환"
-            style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-muted);padding:0;line-height:1;">🌙</button>
-          <a href="/admin" style="color: var(--accent); opacity: 0.6;" title="관리자">⚙</a>
+
+        <!-- 데스크탑 -->
+        <nav class="desktop-nav">
+          <a href="/posts">Posts</a>
+          <a href="/tech">TechMap</a>
+          <a href="/tags">Tags</a>
+          <a href="/about">About</a>
+          <button id="theme-toggle-desk" class="theme-btn" title="테마 전환">🌙</button>
+          <a href="/admin" class="admin-link" title="관리자">⚙</a>
         </nav>
+
+        <!-- 모바일 햄버거 -->
+        <button class="hamburger" id="hamburger" aria-label="메뉴">
+          <span></span><span></span><span></span>
+        </button>
       </div>
+
+      <!-- 모바일 드로어 -->
+      <nav class="mobile-nav" id="mobile-nav">
+        <a href="/posts">Posts</a>
+        <a href="/tech">TechMap</a>
+        <a href="/tags">Tags</a>
+        <a href="/about">About</a>
+        <a href="/admin">⚙ 관리자</a>
+        <div class="theme-row">
+          <span>테마</span>
+          <button id="theme-toggle-mob" class="theme-btn">🌙</button>
+        </div>
+      </nav>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 py-10">
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
       <slot />
     </main>
 
@@ -67,19 +195,33 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     <script is:inline>
       // 테마 초기화
-      const saved = localStorage.getItem('theme');
-      if (saved === 'light') document.documentElement.classList.add('light');
+      if (localStorage.getItem('theme') === 'light') {
+        document.documentElement.classList.add('light');
+      }
 
-      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      function setThemeIcon(isLight) {
+        const icon = isLight ? '☀️' : '🌙';
+        const d = document.getElementById('theme-toggle-desk');
+        const m = document.getElementById('theme-toggle-mob');
+        if (d) d.textContent = icon;
+        if (m) m.textContent = icon;
+      }
+
+      setThemeIcon(document.documentElement.classList.contains('light'));
+
+      function toggleTheme() {
         const isLight = document.documentElement.classList.toggle('light');
         localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌙';
-      });
-
-      // 초기 아이콘
-      if (document.documentElement.classList.contains('light')) {
-        document.getElementById('theme-toggle').textContent = '☀️';
+        setThemeIcon(isLight);
       }
+
+      document.getElementById('theme-toggle-desk')?.addEventListener('click', toggleTheme);
+      document.getElementById('theme-toggle-mob')?.addEventListener('click', toggleTheme);
+
+      // 햄버거
+      document.getElementById('hamburger')?.addEventListener('click', () => {
+        document.getElementById('mobile-nav').classList.toggle('open');
+      });
     </script>
   </body>
 </html>
