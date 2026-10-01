@@ -26,12 +26,10 @@ jobs:
 
       - name: Restart PM2
         run: |
-          if pm2 list | grep -q "devlog"; then
-            pm2 restart devlog --update-env
-          else
-            pm2 start ecosystem.config.cjs --env production
-            pm2 save
-          fi
+          cd ~/devlog
+          pm2 delete devlog 2>/dev/null || true
+          pm2 start ecosystem.config.cjs --env production
+          pm2 save
 
       - name: Start nginx container
         run: |
