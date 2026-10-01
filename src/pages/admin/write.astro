@@ -1,0 +1,266 @@
+---
+export const prerender = false;
+
+import { execSync } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+
+let result = { success: false, message: '', slug: '' };
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const title = form.get('title')?.toString().trim() ?? '';
+  const description = form.get('description')?.toString().trim() ?? '';
+  const date = form.get('date')?.toString() ?? new Date().toISOString().slice(0, 10);
+  const tags = form.get('tags')?.toString().trim() ?? '';
+  const techs = form.get('techs')?.toString().trim() ?? '';
+  const content = form.get('content')?.toString() ?? '';
+  const slug = form.get('slug')?.toString().trim()
+    || title.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-|-$/g, '');
+
+  const tagsArr = tags ? tags.split(',').map(t => `"${t.trim()}"`).join(', ') : '';
+  const techsArr = techs ? techs.split(',').map(t => `"${t.trim()}"`).join(', ') : '';
+
+  const frontmatter = `---
+title: "${title}"
+description: "${description}"
+date: "${date}"
+tags: [${tagsArr}]
+techs: [${techsArr}]
+---
+
+${content}`;
+
+  try {
+    const repoRoot = process.cwd();
+    const postsDir = path.join(repoRoot, 'src/content/posts');
+    const filePath = path.join(postsDir, `${slug}.md`);
+
+    fs.writeFileSync(filePath, frontmatter, 'utf-8');
+
+    // git commit & push
+    execSync(`git add src/content/posts/${slug}.md`, { cwd: repoRoot });
+    execSync(`git commit -m "post: ${title}"`, { cwd: repoRoot });
+    execSync('git push origin main', { cwd: repoRoot });
+
+    result = { success: true, message: '발행됐습니다. 배포까지 1~2분 소요됩니다.', slug };
+  } catch (e: any) {
+    result = { success: false, message: `오류: ${e.message}`, slug: '' };
+  }
+}
+
+const today = new Date().toISOString().slice(0, 10);
+---
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>글 작성 — Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f0f13; color: #e2e2f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+    .header {
+      background: rgba(15,15,19,0.9);
+      border-bottom: 1px solid #2a2a3a;
+      padding: 0 1.5rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo { font-family: monospace; font-size: 0.875rem; color: #6366f1; display: flex; align-items: center; gap: 0.75rem; }
+    .logo a { color: #8888aa; text-decoration: none; font-size: 0.8rem; }
+    .logo a:hover { color: #fff; }
+
+    .layout { display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 3.5rem); }
+
+    .editor-panel { padding: 1.5rem; overflow-y: auto; border-right: 1px solid #2a2a3a; display: flex; flex-direction: column; gap: 1rem; }
+    .preview-panel { padding: 1.5rem; overflow-y: auto; background: #16161d; }
+
+    label { display: block; font-size: 0.7rem; font-family: monospace; color: #8888aa; margin-bottom: 0.35rem; text-transform: uppercase; }
+
+    input[type=text], input[type=date], textarea {
+      width: 100%;
+      background: #16161d;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.5rem;
+      color: #e2e2f0;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus { border-color: #6366f1; }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    #content {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      resize: none;
+      flex: 1;
+      min-height: 400px;
+    }
+
+    .actions { display: flex; gap: 0.75rem; align-items: center; }
+    .btn-publish {
+      padding: 0.5rem 1.25rem;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-publish:hover { background: #4f46e5; }
+    .btn-preview {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      color: #8888aa;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-preview:hover { border-color: #6366f1; color: #fff; }
+
+    .toast {
+      padding: 0.625rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .toast.success { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .toast.error   { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+
+    /* Preview styles */
+    .preview-panel h1, .preview-panel h2, .preview-panel h3 { color: #fff; margin: 1.25rem 0 0.5rem; }
+    .preview-panel h1 { font-size: 1.5rem; border-bottom: 1px solid #2a2a3a; padding-bottom: 0.5rem; }
+    .preview-panel h2 { font-size: 1.2rem; }
+    .preview-panel p { color: #c4c4d8; line-height: 1.75; margin-bottom: 0.75rem; }
+    .preview-panel code { background: #1e1e2a; padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-size: 0.8rem; color: #a78bfa; font-family: monospace; }
+    .preview-panel pre { background: #1e1e2a; border: 1px solid #2a2a3a; border-radius: 0.5rem; padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
+    .preview-panel pre code { background: none; padding: 0; }
+    .preview-panel ul, .preview-panel ol { color: #c4c4d8; padding-left: 1.5rem; margin-bottom: 0.75rem; line-height: 1.75; }
+    .preview-panel blockquote { border-left: 3px solid #6366f1; padding-left: 1rem; color: #8888aa; margin: 0.75rem 0; }
+    .preview-panel table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-bottom: 1rem; }
+    .preview-panel th { background: #1e1e2a; padding: 0.5rem 0.75rem; border: 1px solid #2a2a3a; color: #fff; text-align: left; }
+    .preview-panel td { padding: 0.5rem 0.75rem; border: 1px solid #2a2a3a; color: #c4c4d8; }
+    .preview-placeholder { color: #2a2a3a; font-size: 0.875rem; margin-top: 4rem; text-align: center; }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .preview-panel { display: none; }
+      .preview-panel.visible { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <span>◆ 글 작성</span>
+      <a href="/admin">← 대시보드</a>
+    </div>
+    <div class="actions">
+      {result.success && (
+        <span class="toast success">{result.message}</span>
+      )}
+      {!result.success && result.message && (
+        <span class="toast error">{result.message}</span>
+      )}
+      <button type="button" class="btn-preview" onclick="togglePreview()">미리보기</button>
+      <button type="submit" form="write-form" class="btn-publish">발행</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="editor-panel">
+      <form id="write-form" method="POST">
+        <div style="margin-bottom: 1rem;">
+          <label for="title">제목 *</label>
+          <input id="title" name="title" type="text" placeholder="글 제목" required />
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label for="description">한 줄 설명 *</label>
+          <input id="description" name="description" type="text" placeholder="목록에 표시될 설명" required />
+        </div>
+
+        <div class="row2" style="margin-bottom: 1rem;">
+          <div>
+            <label for="date">날짜</label>
+            <input id="date" name="date" type="date" value={today} />
+          </div>
+          <div>
+            <label for="slug">슬러그 (URL)</label>
+            <input id="slug" name="slug" type="text" placeholder="자동 생성" />
+          </div>
+        </div>
+
+        <div class="row2" style="margin-bottom: 1rem;">
+          <div>
+            <label for="tags">태그 (쉼표 구분)</label>
+            <input id="tags" name="tags" type="text" placeholder="React, TypeScript" />
+          </div>
+          <div>
+            <label for="techs">기술 (쉼표 구분)</label>
+            <input id="techs" name="techs" type="text" placeholder="React, Node.js" />
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; flex: 1;">
+          <label for="content">본문 (Markdown)</label>
+          <textarea id="content" name="content" placeholder="## 소제목&#10;&#10;본문을 작성하세요..." oninput="updatePreview()"></textarea>
+        </div>
+      </form>
+    </div>
+
+    <div class="preview-panel" id="preview-panel">
+      <div id="preview-content">
+        <p class="preview-placeholder">본문을 작성하면 미리보기가 표시됩니다</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { marked } from 'https://cdn.jsdelivr.net/npm/marked@12/+esm';
+
+    window.updatePreview = function() {
+      const content = document.getElementById('content').value;
+      const preview = document.getElementById('preview-content');
+      if (content.trim()) {
+        preview.innerHTML = marked.parse(content);
+      } else {
+        preview.innerHTML = '<p class="preview-placeholder">본문을 작성하면 미리보기가 표시됩니다</p>';
+      }
+    };
+
+    window.togglePreview = function() {
+      const panel = document.getElementById('preview-panel');
+      panel.classList.toggle('visible');
+    };
+
+    // 탭키 들여쓰기
+    document.getElementById('content').addEventListener('keydown', e => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        e.target.value = e.target.value.substring(0, start) + '  ' + e.target.value.substring(end);
+        e.target.selectionStart = e.target.selectionEnd = start + 2;
+      }
+    });
+  </script>
+</body>
+</html>
