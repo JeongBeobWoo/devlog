@@ -5,6 +5,10 @@ import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
+const techmapPath = path.join(process.cwd(), 'src/data/techmap.json');
+const techmap = JSON.parse(fs.readFileSync(techmapPath, 'utf-8'));
+const categoryOptions: string[] = techmap.map((g: any) => g.label);
+
 let result = { success: false, message: '', slug: '' };
 
 if (Astro.request.method === 'POST') {
@@ -209,6 +213,69 @@ const today = new Date().toISOString().slice(0, 10);
     .preview-panel blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--text-muted); margin: .75rem 0; }
     .preview-placeholder { color: var(--border); font-size: .875rem; margin-top: 4rem; text-align: center; }
 
+    /* 카테고리 드롭다운 */
+    .field select {
+      width: 100%;
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: 0.625rem; color: var(--text);
+      font-size: 0.925rem; padding: 0.6rem 0.875rem;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+      font-family: inherit; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888aa' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.875rem center;
+      padding-right: 2.25rem; cursor: pointer;
+    }
+    .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .field select option { background: var(--bg-3); color: var(--text); }
+
+    /* 스택 multi-select */
+    .stack-picker { display: flex; flex-direction: column; gap: 0.625rem; }
+    .stack-group-label {
+      font-size: 0.65rem; font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase; letter-spacing: .08em; font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .stack-badges { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+    .stack-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 0.5rem; font-size: 0.775rem; font-weight: 500;
+      border: 1px solid transparent; cursor: pointer;
+      transition: all .15s; user-select: none;
+      background: var(--bg-3); color: var(--text-muted); border-color: var(--border);
+    }
+    .stack-badge:hover { color: var(--text); border-color: var(--text-muted); }
+    .stack-badge.selected { color: #fff; }
+    .stack-badge .badge-icon { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+
+    /* 신규 스택 입력 */
+    .stack-custom-row {
+      display: flex; gap: 0.5rem; margin-top: 0.25rem;
+    }
+    .stack-custom-row input {
+      flex: 1;
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: 0.625rem; color: var(--text);
+      font-size: 0.875rem; padding: 0.45rem 0.75rem;
+      outline: none; transition: border-color .2s, box-shadow .2s; font-family: inherit;
+    }
+    .stack-custom-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .stack-custom-row input::placeholder { color: var(--text-muted); opacity: .55; }
+    .stack-custom-row button {
+      padding: 0.45rem 0.875rem;
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: 0.625rem; color: var(--text-muted);
+      font-size: 0.8rem; cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .stack-custom-row button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* 선택된 스택 요약 */
+    .stack-selected-summary {
+      font-size: 0.72rem; color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace; min-height: 1rem;
+      margin-top: 0.25rem;
+    }
+
     @media (max-width: 768px) {
       .layout { grid-template-columns: 1fr; }
       .preview-panel { display: none; }
@@ -255,19 +322,48 @@ const today = new Date().toISOString().slice(0, 10);
           </div>
           <div class="field">
             <label for="category">카테고리</label>
-            <input id="category" name="category" type="text" placeholder="개발, 회고..." />
+            <select id="category" name="category">
+              <option value="">선택 안 함</option>
+              {categoryOptions.map(cat => <option value={cat}>{cat}</option>)}
+            </select>
           </div>
         </div>
 
-        <div class="row2">
-          <div class="field">
-            <label for="tags">태그 (쉼표 구분)</label>
-            <input id="tags" name="tags" type="text" placeholder="React, TypeScript" />
+        <div class="field">
+          <label for="tags">태그 (쉼표 구분)</label>
+          <input id="tags" name="tags" type="text" placeholder="React, TypeScript, 회고..." />
+        </div>
+
+        <div class="field">
+          <label>기술 스택</label>
+          <div class="stack-picker">
+            {techmap.map((group: any) => (
+              <div>
+                <div class="stack-group-label" style={`color: ${group.color}`}>{group.label}</div>
+                <div class="stack-badges">
+                  {group.items.map((item: any) => (
+                    <button
+                      type="button"
+                      class="stack-badge"
+                      data-name={item.name}
+                      data-color={group.color}
+                      onclick="toggleStack(this)"
+                    >
+                      <span class="badge-icon">{item.icon}</span>
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div class="stack-custom-row">
+              <input id="custom-stack-input" type="text" placeholder="신규 스택 직접 입력..." />
+              <button type="button" onclick="addCustomStack()">+ 추가</button>
+            </div>
+            <div id="custom-badges" class="stack-badges"></div>
+            <div id="stack-summary" class="stack-selected-summary">선택된 스택 없음</div>
           </div>
-          <div class="field">
-            <label for="techs">기술 (쉼표 구분)</label>
-            <input id="techs" name="techs" type="text" placeholder="React, Node.js" />
-          </div>
+          <input type="hidden" id="techs" name="techs" />
         </div>
 
         <details>
@@ -330,6 +426,68 @@ const today = new Date().toISOString().slice(0, 10);
       </div>
     </div>
   </div>
+
+  <script is:inline>
+    // ── 스택 선택 ────────────────────────────────────────────────────────────
+    const selectedStacks = new Set();
+
+    function updateStackSummary() {
+      const summary = document.getElementById('stack-summary');
+      const hidden  = document.getElementById('techs');
+      const arr = [...selectedStacks];
+      summary.textContent = arr.length ? arr.join(', ') : '선택된 스택 없음';
+      hidden.value = arr.join(',');
+    }
+
+    window.toggleStack = function(btn) {
+      const name  = btn.dataset.name;
+      const color = btn.dataset.color;
+      if (selectedStacks.has(name)) {
+        selectedStacks.delete(name);
+        btn.classList.remove('selected');
+        btn.style.background  = '';
+        btn.style.borderColor = '';
+        btn.style.color       = '';
+      } else {
+        selectedStacks.add(name);
+        btn.classList.add('selected');
+        btn.style.background  = color + 'cc';
+        btn.style.borderColor = color;
+        btn.style.color       = '#fff';
+      }
+      updateStackSummary();
+    };
+
+    window.addCustomStack = function() {
+      const input = document.getElementById('custom-stack-input');
+      const name  = input.value.trim();
+      if (!name || selectedStacks.has(name)) { input.value = ''; return; }
+      selectedStacks.add(name);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'stack-badge selected';
+      btn.dataset.name  = name;
+      btn.dataset.color = 'var(--text-muted)';
+      btn.style.background  = '#6366f1cc';
+      btn.style.borderColor = '#6366f1';
+      btn.style.color       = '#fff';
+      btn.textContent = name;
+      btn.onclick = function() {
+        selectedStacks.delete(name);
+        btn.remove();
+        updateStackSummary();
+      };
+      document.getElementById('custom-badges').appendChild(btn);
+      input.value = '';
+      updateStackSummary();
+    };
+
+    // Enter 키로 신규 스택 추가
+    document.getElementById('custom-stack-input')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); window.addCustomStack(); }
+    });
+  </script>
 
   <script type="module">
     import { marked } from 'https://cdn.jsdelivr.net/npm/marked@12/+esm';
