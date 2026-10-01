@@ -6,34 +6,32 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            set -e
-            cd ~/devlog
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            # 최신 코드 pull
-            git pull origin main
+      - name: Install dependencies
+        run: npm ci
 
-            # 의존성 설치 (변경된 경우만)
-            npm ci --prefer-offline 2>/dev/null || npm install
+      - name: Build
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          GISCUS_REPO: JeongBeobWoo/devlog
+          GISCUS_REPO_ID: R_kgDOU1-Zlw
+          GISCUS_CATEGORY_ID: DIC_kwDOU1-Zl84DGxRr
+        run: npm run build
 
-            # 빌드
-            npm run build
+      - name: Restart PM2
+        run: |
+          if pm2 list | grep -q "devlog"; then
+            pm2 restart devlog
+          else
+            pm2 start dist/server/entry.mjs --name devlog --env production
+            pm2 save
+          fi
 
-            # PM2로 재시작 (없으면 시작)
-            if pm2 list | grep -q "devlog"; then
-              pm2 restart devlog
-            else
-              pm2 start dist/server/entry.mjs --name devlog --env production
-              pm2 save
-            fi
-
-            echo "✅ Deploy complete"
+      - name: Done
+        run: echo "✅ Deploy complete"
