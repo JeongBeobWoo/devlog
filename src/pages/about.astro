@@ -4,14 +4,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout title="About">
   <div class="max-w-2xl">
-    <h1 class="text-3xl font-bold text-white mb-6">About</h1>
+    <h1 class="text-3xl font-bold mb-6" style="color: var(--text-heading);">About</h1>
 
     <div class="card mb-6">
       <div class="flex items-center gap-4 mb-4">
         <div class="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
           style="background: var(--accent-glow); border: 2px solid var(--accent); color: var(--accent);">B</div>
         <div>
-          <h2 class="text-lg font-semibold text-white">BubbleStone</h2>
+          <h2 class="text-lg font-semibold" style="color: var(--text-heading);">BubbleStone</h2>
           <p class="text-sm" style="color: var(--text-muted);">Developer & Builder</p>
         </div>
       </div>
@@ -22,10 +22,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
 
     <div class="card">
-      <h3 class="text-sm font-semibold text-white mb-4">Contact</h3>
+      <h3 class="text-sm font-semibold mb-4" style="color: var(--text-heading);">Contact</h3>
       <div class="space-y-2 text-sm" style="color: var(--text-muted);">
-        <p>· GitHub: <a href="https://github.com/bubbleStone" class="hover:text-white transition-colors" style="color: var(--accent);">@bubbleStone</a></p>
-        <p>· Blog: <a href="https://blog.naver.com/bubble_money" class="hover:text-white transition-colors" style="color: var(--accent);">Naver Blog</a></p>
+        <p>· GitHub: <a href="https://github.com/bubbleStone" class="transition-colors hover:opacity-80" style="color: var(--accent);">@bubbleStone</a></p>
+        <p>· Blog: <a href="https://blog.naver.com/bubble_money" class="transition-colors hover:opacity-80" style="color: var(--accent);">Naver Blog</a></p>
       </div>
     </div>
   </div>

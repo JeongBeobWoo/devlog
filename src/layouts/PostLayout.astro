@@ -37,7 +37,7 @@ const formatted = new Date(date).toLocaleDateString('ko-KR', { year: 'numeric', 
           <a href={`/tags/${tag}`} class="tag-badge">{tag}</a>
         ))}
       </div>
-      <h1 class="text-3xl font-bold mb-3 text-white">{title}</h1>
+      <h1 class="text-3xl font-bold mb-3" style="color: var(--text-heading);">{title}</h1>
       <p class="text-sm" style="color: var(--text-muted);">{formatted}</p>
       {techs.length > 0 && (
         <div class="flex flex-wrap gap-2 mt-4">
@@ -54,7 +54,7 @@ const formatted = new Date(date).toLocaleDateString('ko-KR', { year: 'numeric', 
     </div>
 
     <footer class="mt-10">
-      <a href="/posts" class="text-sm hover:text-white transition-colors" style="color: var(--text-muted);">← 모든 글 보기</a>
+      <a href="/posts" class="text-sm transition-colors hover:opacity-80" style="color: var(--text-muted);">← 모든 글 보기</a>
     </footer>
 
     <Comments />
