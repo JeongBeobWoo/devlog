@@ -9,20 +9,20 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Pull latest code
+        run: |
+          cd ~/devlog
+          git pull origin main
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          cd ~/devlog
+          npm ci
 
       - name: Build
-        env:
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          GISCUS_REPO: JeongBeobWoo/devlog
-          GISCUS_REPO_ID: R_kgDOU1-Zlw
-          GISCUS_CATEGORY_ID: DIC_kwDOU1-Zl84DGxRr
-        run: npm run build
+        run: |
+          cd ~/devlog
+          npm run build
 
       - name: Restart PM2
         run: |
@@ -30,14 +30,6 @@ jobs:
           pm2 delete devlog 2>/dev/null || true
           pm2 start ecosystem.config.cjs --env production
           pm2 save
-
-      - name: Start nginx container
-        run: |
-          if docker ps | grep -q "devlog-nginx"; then
-            docker compose restart nginx
-          else
-            docker compose up -d nginx
-          fi
 
       - name: Done
         run: echo "✅ Deploy complete"
