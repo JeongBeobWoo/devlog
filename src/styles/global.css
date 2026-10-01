@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -13,35 +13,49 @@
   --accent-glow: rgba(99, 102, 241, 0.3);
   --code-color: #a78bfa;
   --th-bg: #1e1e2a;
+  --card-shadow: none;
+  --card-radius: 0.75rem;
+  --tag-bg: var(--bg-3);
+  --tag-color: var(--text-muted);
+  --tag-border: var(--border);
+  --tag-radius: 0.25rem;
+  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Inter', sans-serif;
 }
 
-/* 라이트 테마 */
+/* 라이트 테마 — D타입 (클린 화이트 + 인디고) */
 html.light {
-  --bg: #f8f8fc;
+  --bg: #ffffff;
   --bg-2: #ffffff;
-  --bg-3: #f0f0f8;
-  --border: #d8d8ee;
-  --text: #1a1a2e;
-  --text-heading: #0d0d1a;
-  --text-muted: #5555888;
+  --bg-3: #eef2ff;
+  --border: #e4e4e7;
+  --text: #18181b;
+  --text-heading: #18181b;
+  --text-muted: #71717a;
   --accent: #4f46e5;
-  --accent-glow: rgba(79, 70, 229, 0.12);
-  --code-color: #6d28d9;
-  --th-bg: #ebebf8;
+  --accent-glow: rgba(79, 70, 229, 0.08);
+  --code-color: #4f46e5;
+  --th-bg: #f4f4f5;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --card-radius: 1rem;
+  --tag-bg: #eef2ff;
+  --tag-color: #4f46e5;
+  --tag-border: transparent;
+  --tag-radius: 9999px;
+  --font-body: 'IBM Plex Sans KR', 'Inter', sans-serif;
+  --font-heading: 'Space Grotesk', 'Inter', sans-serif;
 }
-
-/* 라이트 모드에서 text-muted 재정의 */
-html.light { --text-muted: #666699; }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4 {
-  font-weight: 600;
+  font-family: var(--font-heading);
+  font-weight: 700;
   letter-spacing: -0.025em;
 }
 
@@ -65,26 +79,30 @@ pre {
 /* Components */
 .tag-badge {
   display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: var(--tag-radius);
   font-size: 0.75rem;
   font-family: 'JetBrains Mono', monospace;
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  color: var(--tag-color);
   text-decoration: none;
-  transition: border-color 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 .tag-badge:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
+html.light .tag-badge:hover {
+  background: #e0e7ff;
+}
 
 .card {
   background: var(--bg-2);
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: var(--card-radius);
   padding: 1.5rem;
+  box-shadow: var(--card-shadow);
   transition: border-color 0.2s, box-shadow 0.2s;
   text-decoration: none;
   display: block;
@@ -93,6 +111,9 @@ pre {
   border-color: var(--accent);
   box-shadow: 0 0 20px var(--accent-glow);
 }
+html.light .card:hover {
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.12);
+}
 
 /* Prose — 변수 기반으로 라이트/다크 모두 대응 */
 .prose-dark { color: var(--text); }
@@ -100,6 +121,7 @@ pre {
 .prose-dark h2,
 .prose-dark h3,
 .prose-dark h4 {
+  font-family: var(--font-heading);
   color: var(--text-heading);
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
