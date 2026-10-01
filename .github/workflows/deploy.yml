@@ -33,5 +33,13 @@ jobs:
             pm2 save
           fi
 
+      - name: Start nginx container
+        run: |
+          if docker ps | grep -q "devlog-nginx"; then
+            docker compose restart nginx
+          else
+            docker compose up -d nginx
+          fi
+
       - name: Done
         run: echo "✅ Deploy complete"
