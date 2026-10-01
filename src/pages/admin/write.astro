@@ -44,10 +44,10 @@ ${content}`;
 
     fs.writeFileSync(filePath, frontmatter, 'utf-8');
 
-    // git commit & push
-    execSync(`git add src/content/posts/${slug}.md`, { cwd: repoRoot });
-    execSync(`git commit -m "post: ${title}"`, { cwd: repoRoot });
-    execSync('git push origin main', { cwd: repoRoot });
+    const gitEnv = { ...process.env, GIT_SSH_COMMAND: 'ssh -o StrictHostKeyChecking=no' };
+    execSync(`git add src/content/posts/${slug}.md`, { cwd: repoRoot, env: gitEnv });
+    execSync(`git commit -m "post: ${title}"`, { cwd: repoRoot, env: gitEnv });
+    execSync('git push origin main', { cwd: repoRoot, env: gitEnv });
 
     result = { success: true, message: '발행됐습니다. 배포까지 1~2분 소요됩니다.', slug };
   } catch (e: any) {

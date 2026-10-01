@@ -65,9 +65,10 @@ export interface TechGroup {
 export const techmap: TechGroup[] = ${serialized};
 `;
       fs.writeFileSync(filePath, content, 'utf-8');
-      execSync('git add src/data/techmap.ts', { cwd: repoRoot });
-      execSync('git commit -m "chore: update techmap"', { cwd: repoRoot });
-      execSync('git push origin main', { cwd: repoRoot });
+      const gitEnv = { ...process.env, GIT_SSH_COMMAND: 'ssh -o StrictHostKeyChecking=no' };
+      execSync('git add src/data/techmap.ts', { cwd: repoRoot, env: gitEnv });
+      execSync('git commit -m "chore: update techmap"', { cwd: repoRoot, env: gitEnv });
+      execSync('git push origin main', { cwd: repoRoot, env: gitEnv });
       mapResult = { success: true, message: '저장됐습니다. 배포까지 1~2분 소요됩니다.' };
     } catch (e: any) {
       mapResult = { success: false, message: `오류: ${e.message}` };
