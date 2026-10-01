@@ -6,18 +6,33 @@ interface Props {
   title: string;
   description?: string;
   date: string;
+  category?: string;
   tags?: string[];
   techs?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  ogImage?: string;
 }
 
-const { title, description, date, tags = [], techs = [] } = Astro.props;
+const { title, description, date, category, tags = [], techs = [], seoTitle, seoDescription, ogImage } = Astro.props;
 const formatted = new Date(date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout
+  title={seoTitle || title}
+  description={seoDescription || description}
+  ogImage={ogImage}
+>
   <article class="max-w-3xl mx-auto">
     <header class="mb-10">
-      <div class="flex flex-wrap gap-2 mb-4">
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        {category && (
+          <a href={`/category/${category}`}
+            class="px-2 py-0.5 rounded text-xs font-mono"
+            style="background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent);">
+            {category}
+          </a>
+        )}
         {tags.map(tag => (
           <a href={`/tags/${tag}`} class="tag-badge">{tag}</a>
         ))}
@@ -27,7 +42,8 @@ const formatted = new Date(date).toLocaleDateString('ko-KR', { year: 'numeric', 
       {techs.length > 0 && (
         <div class="flex flex-wrap gap-2 mt-4">
           {techs.map(tech => (
-            <span class="px-2 py-0.5 rounded-full text-xs font-mono" style="background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent);">{tech}</span>
+            <span class="px-2 py-0.5 rounded-full text-xs font-mono"
+              style="background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent);">{tech}</span>
           ))}
         </div>
       )}

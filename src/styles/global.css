@@ -12,6 +12,18 @@
   --accent-glow: rgba(99, 102, 241, 0.3);
 }
 
+/* 라이트 테마 */
+html.light {
+  --bg: #f8f8fc;
+  --bg-2: #ffffff;
+  --bg-3: #f0f0f8;
+  --border: #e0e0ee;
+  --text: #1a1a2e;
+  --text-muted: #6666aa;
+  --accent: #4f46e5;
+  --accent-glow: rgba(79, 70, 229, 0.15);
+}
+
 body {
   background: var(--bg);
   color: var(--text);

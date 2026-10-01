@@ -7,8 +7,12 @@ const posts = defineCollection({
     title: z.string(),
     description: z.string(),
     date: z.string(),
+    category: z.string().optional().default(''),
     tags: z.array(z.string()).optional().default([]),
     techs: z.array(z.string()).optional().default([]),
+    seoTitle: z.string().optional(),
+    seoDescription: z.string().optional(),
+    ogImage: z.string().optional(),
     draft: z.boolean().optional().default(false),
   }),
 });

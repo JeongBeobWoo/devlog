@@ -15,8 +15,12 @@ const { Content } = await render(post);
   title={post.data.title}
   description={post.data.description}
   date={post.data.date}
+  category={post.data.category}
   tags={post.data.tags}
   techs={post.data.techs}
+  seoTitle={post.data.seoTitle}
+  seoDescription={post.data.seoDescription}
+  ogImage={post.data.ogImage}
 >
   <Content />
 </PostLayout>

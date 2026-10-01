@@ -12,8 +12,11 @@ if (Astro.request.method === 'POST') {
   const title = form.get('title')?.toString().trim() ?? '';
   const description = form.get('description')?.toString().trim() ?? '';
   const date = form.get('date')?.toString() ?? new Date().toISOString().slice(0, 10);
+  const category = form.get('category')?.toString().trim() ?? '';
   const tags = form.get('tags')?.toString().trim() ?? '';
   const techs = form.get('techs')?.toString().trim() ?? '';
+  const seoTitle = form.get('seoTitle')?.toString().trim() ?? '';
+  const seoDescription = form.get('seoDescription')?.toString().trim() ?? '';
   const content = form.get('content')?.toString() ?? '';
   const slug = form.get('slug')?.toString().trim()
     || title.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-|-$/g, '');
@@ -25,8 +28,11 @@ if (Astro.request.method === 'POST') {
 title: "${title}"
 description: "${description}"
 date: "${date}"
+${category ? `category: "${category}"` : ''}
 tags: [${tagsArr}]
 techs: [${techsArr}]
+${seoTitle ? `seoTitle: "${seoTitle}"` : ''}
+${seoDescription ? `seoDescription: "${seoDescription}"` : ''}
 ---
 
 ${content}`;
@@ -203,8 +209,8 @@ const today = new Date().toISOString().slice(0, 10);
             <input id="date" name="date" type="date" value={today} />
           </div>
           <div>
-            <label for="slug">슬러그 (URL)</label>
-            <input id="slug" name="slug" type="text" placeholder="자동 생성" />
+            <label for="category">카테고리</label>
+            <input id="category" name="category" type="text" placeholder="개발, 회고, 자동화..." />
           </div>
         </div>
 
@@ -218,6 +224,27 @@ const today = new Date().toISOString().slice(0, 10);
             <input id="techs" name="techs" type="text" placeholder="React, Node.js" />
           </div>
         </div>
+
+        <!-- SEO -->
+        <details style="margin-bottom: 1rem;">
+          <summary style="font-size:0.7rem;color:#8888aa;cursor:pointer;font-family:monospace;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">
+            SEO 설정 (선택)
+          </summary>
+          <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:0.75rem;padding:0.75rem;background:#16161d;border:1px solid #2a2a3a;border-radius:0.5rem;">
+            <div>
+              <label for="seoTitle">SEO 제목 (검색결과 표시 제목)</label>
+              <input id="seoTitle" name="seoTitle" type="text" placeholder="비워두면 제목과 동일" />
+            </div>
+            <div>
+              <label for="seoDescription">SEO 설명 (검색결과 표시 설명)</label>
+              <input id="seoDescription" name="seoDescription" type="text" placeholder="비워두면 한 줄 설명과 동일" />
+            </div>
+            <div>
+              <label for="slug">슬러그 (URL 경로)</label>
+              <input id="slug" name="slug" type="text" placeholder="자동 생성" />
+            </div>
+          </div>
+        </details>
 
         <div style="display: flex; flex-direction: column; flex: 1;">
           <label for="content">본문 (Markdown)</label>
