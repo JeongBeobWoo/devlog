@@ -1,0 +1,139 @@
+---
+export const prerender = false;
+
+import fs from 'fs';
+import path from 'path';
+
+let result = { success: false, message: '' };
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const currentPw = form.get('current')?.toString() ?? '';
+  const newPw = form.get('new')?.toString() ?? '';
+  const confirmPw = form.get('confirm')?.toString() ?? '';
+
+  const adminPw = import.meta.env.ADMIN_PASSWORD;
+
+  if (currentPw !== adminPw) {
+    result = { success: false, message: '현재 비밀번호가 올바르지 않습니다' };
+  } else if (newPw.length < 8) {
+    result = { success: false, message: '새 비밀번호는 8자 이상이어야 합니다' };
+  } else if (newPw !== confirmPw) {
+    result = { success: false, message: '새 비밀번호가 일치하지 않습니다' };
+  } else {
+    try {
+      const envPath = path.join(process.cwd(), '.env');
+      let envContent = fs.readFileSync(envPath, 'utf-8');
+      envContent = envContent.replace(/^ADMIN_PASSWORD=.*/m, `ADMIN_PASSWORD=${newPw}`);
+      fs.writeFileSync(envPath, envContent, 'utf-8');
+      result = { success: true, message: '비밀번호가 변경됐습니다. 다음 로그인부터 적용됩니다.' };
+    } catch (e: any) {
+      result = { success: false, message: `오류: ${e.message}` };
+    }
+  }
+}
+---
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>설정 — Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f0f13; color: #e2e2f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+    .header {
+      background: rgba(15,15,19,0.9);
+      border-bottom: 1px solid #2a2a3a;
+      padding: 0 1.5rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+    }
+    .logo { font-family: monospace; font-size: 0.875rem; color: #6366f1; }
+    .logo a { color: #8888aa; text-decoration: none; font-size: 0.8rem; }
+    .logo a:hover { color: #fff; }
+
+    main { max-width: 480px; margin: 3rem auto; padding: 0 1.5rem; }
+    h1 { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 2rem; }
+
+    .card { background: #16161d; border: 1px solid #2a2a3a; border-radius: 0.75rem; padding: 1.5rem; }
+    .card h2 { font-size: 0.875rem; font-weight: 600; color: #6366f1; margin-bottom: 1.25rem; font-family: monospace; text-transform: uppercase; }
+
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.7rem; color: #8888aa; font-family: monospace; text-transform: uppercase; margin-bottom: 0.35rem; }
+    input[type=password] {
+      width: 100%;
+      background: #1e1e2a;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.5rem;
+      color: #e2e2f0;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type=password]:focus { border-color: #6366f1; }
+
+    .toast { padding: 0.625rem 0.875rem; border-radius: 0.5rem; font-size: 0.8rem; margin-bottom: 1rem; }
+    .toast.success { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .toast.error   { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+
+    button {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.6rem;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <span>◆ 설정</span>
+      &nbsp;
+      <a href="/admin">← 대시보드</a>
+    </div>
+  </header>
+
+  <main>
+    <h1>설정</h1>
+
+    <div class="card">
+      <h2>비밀번호 변경</h2>
+
+      {result.message && (
+        <div class={`toast ${result.success ? 'success' : 'error'}`}>{result.message}</div>
+      )}
+
+      <form method="POST">
+        <div class="field">
+          <label for="current">현재 비밀번호</label>
+          <input id="current" name="current" type="password" required autofocus />
+        </div>
+        <div class="field">
+          <label for="new">새 비밀번호</label>
+          <input id="new" name="new" type="password" required minlength="8" />
+        </div>
+        <div class="field">
+          <label for="confirm">새 비밀번호 확인</label>
+          <input id="confirm" name="confirm" type="password" required minlength="8" />
+        </div>
+        <button type="submit">변경</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

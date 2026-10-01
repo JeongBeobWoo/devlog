@@ -116,7 +116,8 @@ const posts = (await getCollection('posts'))
       <a href="/">블로그 보기 →</a>
     </div>
     <div class="header-right">
-      <form method="POST" action="/admin/logout">
+      <a href="/admin/settings" class="btn btn-ghost">설정</a>
+      <form method="POST" action="/admin/logout" style="display:inline;">
         <button type="submit" class="btn btn-danger">로그아웃</button>
       </form>
     </div>
