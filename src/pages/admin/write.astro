@@ -62,8 +62,23 @@ const today = new Date().toISOString().slice(0, 10);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>글 작성 — Admin</title>
-  <link rel="stylesheet" href="/src/styles/global.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans+KR:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" />
   <style>
+    :root {
+      --bg:#0f0f13; --bg-2:#16161d; --bg-3:#1e1e2a; --border:#2a2a3a;
+      --text:#e2e2f0; --text-heading:#ffffff; --text-muted:#8888aa;
+      --accent:#6366f1; --accent-glow:rgba(99,102,241,.3);
+      --code-color:#a78bfa; --card-shadow:none;
+      --font-body:'IBM Plex Sans KR','Inter',sans-serif;
+      --font-heading:'Space Grotesk','Inter',sans-serif;
+    }
+    html.light {
+      --bg:#ffffff; --bg-2:#ffffff; --bg-3:#eef2ff; --border:#e4e4e7;
+      --text:#18181b; --text-heading:#18181b; --text-muted:#71717a;
+      --accent:#4f46e5; --accent-glow:rgba(79,70,229,.08);
+      --code-color:#4f46e5; --card-shadow:0 1px 3px rgba(0,0,0,.04);
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -108,60 +123,60 @@ const today = new Date().toISOString().slice(0, 10);
 
     /* 폼 요소 */
     .field label {
-      display: block; font-size: 0.68rem; font-family: monospace;
-      color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: .04em;
+      display: block; font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 600;
     }
     .field input {
       width: 100%;
       background: var(--bg-3); border: 1px solid var(--border);
-      border-radius: 0.5rem; color: var(--text);
-      font-size: 0.875rem; padding: 0.45rem 0.7rem;
-      outline: none; transition: border-color .2s; font-family: inherit;
+      border-radius: 0.625rem; color: var(--text);
+      font-size: 0.925rem; padding: 0.6rem 0.875rem;
+      outline: none; transition: border-color .2s, box-shadow .2s; font-family: inherit;
     }
-    .field input:focus { border-color: var(--accent); }
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .field input::placeholder { color: var(--text-muted); opacity: .55; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
 
     /* SEO 접기 */
     details summary {
-      font-size: 0.68rem; font-family: monospace; color: var(--text-muted);
-      cursor: pointer; text-transform: uppercase; letter-spacing: .04em;
-      padding: 0.5rem 0; user-select: none;
+      font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted);
+      cursor: pointer; text-transform: uppercase; letter-spacing: .06em;
+      padding: 0.5rem 0.25rem; user-select: none; font-weight: 600;
     }
     .seo-inner {
-      display: flex; flex-direction: column; gap: 0.625rem;
-      margin-top: 0.5rem; padding: 0.875rem;
-      background: var(--bg-3); border: 1px solid var(--border); border-radius: 0.5rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+      margin-top: 0.5rem; padding: 1rem;
+      background: var(--bg-3); border: 1px solid var(--border); border-radius: 0.625rem;
     }
 
     /* 리치 에디터 */
-    .editor-wrap { flex: 1; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden; }
-    .editor-wrap:focus-within { border-color: var(--accent); }
+    .editor-wrap { flex: 1; display: flex; flex-direction: column; border: 1.5px solid var(--border); border-radius: 0.625rem; overflow: hidden; transition: border-color .2s, box-shadow .2s; }
+    .editor-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 
     .toolbar {
-      display: flex; flex-wrap: wrap; gap: 2px;
-      padding: 0.4rem 0.5rem;
+      display: flex; flex-wrap: wrap; gap: 3px;
+      padding: 0.5rem 0.625rem;
       background: var(--bg-3); border-bottom: 1px solid var(--border);
     }
     .tb-btn {
-      padding: 0.25rem 0.5rem;
-      background: none; border: none; border-radius: 0.375rem;
-      color: var(--text-muted); font-size: 0.8rem; cursor: pointer;
-      transition: background .15s, color .15s;
-      font-family: inherit; line-height: 1.4;
+      padding: 0.3rem 0.6rem;
+      background: none; border: 1px solid transparent; border-radius: 0.375rem;
+      color: var(--text-muted); font-size: 0.82rem; cursor: pointer;
+      transition: all .15s; font-family: 'JetBrains Mono', monospace; line-height: 1.4; font-weight: 500;
     }
-    .tb-btn:hover { background: var(--border); color: var(--text-heading); }
-    .tb-sep { width: 1px; background: var(--border); margin: 2px 3px; align-self: stretch; }
+    .tb-btn:hover { background: var(--bg-2); border-color: var(--border); color: var(--text-heading); }
+    .tb-sep { width: 1px; background: var(--border); margin: 3px 4px; align-self: stretch; }
 
     #editor {
-      flex: 1; min-height: 360px;
-      padding: 0.875rem 1rem;
+      flex: 1; min-height: 380px;
+      padding: 1.125rem 1.25rem;
       outline: none;
-      font-size: 0.9rem; line-height: 1.8;
+      font-size: 0.975rem; line-height: 1.85;
       color: var(--text);
       background: var(--bg-2);
       overflow-y: auto;
     }
-    #editor:empty::before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
+    #editor:empty::before { content: attr(data-placeholder); color: var(--text-muted); opacity: .5; pointer-events: none; }
 
     /* 에디터 내 서식 */
     #editor h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 .5rem; color: var(--text-heading); border-bottom: 1px solid var(--border); padding-bottom: .375rem; }

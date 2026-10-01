@@ -65,11 +65,26 @@ const techmapJson = JSON.stringify(loadTechmap());
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>설정 — Admin</title>
-  <link rel="stylesheet" href="/src/styles/global.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans+KR:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" />
   <script is:inline>
     if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
   </script>
   <style>
+    :root {
+      --bg:#0f0f13; --bg-2:#16161d; --bg-3:#1e1e2a; --border:#2a2a3a;
+      --text:#e2e2f0; --text-heading:#ffffff; --text-muted:#8888aa;
+      --accent:#6366f1; --accent-glow:rgba(99,102,241,.3);
+      --code-color:#a78bfa; --card-shadow:none;
+      --font-body:'IBM Plex Sans KR','Inter',sans-serif;
+      --font-heading:'Space Grotesk','Inter',sans-serif;
+    }
+    html.light {
+      --bg:#ffffff; --bg-2:#ffffff; --bg-3:#eef2ff; --border:#e4e4e7;
+      --text:#18181b; --text-heading:#18181b; --text-muted:#71717a;
+      --accent:#4f46e5; --accent-glow:rgba(79,70,229,.08);
+      --code-color:#4f46e5; --card-shadow:0 1px 3px rgba(0,0,0,.04);
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: var(--font-body, 'Inter', sans-serif); min-height: 100vh; -webkit-font-smoothing: antialiased; }
     .header {
