@@ -12,7 +12,10 @@ jobs:
       - name: Pull latest code
         run: |
           cd ~/devlog
-          git pull origin main
+          cp src/data/techmap.json /tmp/techmap.json.bak 2>/dev/null || true
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/techmap.json.bak src/data/techmap.json 2>/dev/null || true
 
       - name: Install dependencies
         run: |
