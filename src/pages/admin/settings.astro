@@ -3,35 +3,79 @@ export const prerender = false;
 
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
+import { techmap as defaultTechmap } from '../../data/techmap';
 
-let result = { success: false, message: '' };
+let pwResult = { success: false, message: '' };
+let mapResult = { success: false, message: '' };
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const currentPw = form.get('current')?.toString() ?? '';
-  const newPw = form.get('new')?.toString() ?? '';
-  const confirmPw = form.get('confirm')?.toString() ?? '';
+  const action = form.get('action')?.toString();
 
-  const adminPw = process.env.ADMIN_PASSWORD;
+  // ── 비밀번호 변경 ──
+  if (action === 'password') {
+    const currentPw  = form.get('current')?.toString() ?? '';
+    const newPw      = form.get('new')?.toString() ?? '';
+    const confirmPw  = form.get('confirm')?.toString() ?? '';
+    const adminPw    = process.env.ADMIN_PASSWORD;
 
-  if (currentPw !== adminPw) {
-    result = { success: false, message: '현재 비밀번호가 올바르지 않습니다' };
-  } else if (newPw.length < 8) {
-    result = { success: false, message: '새 비밀번호는 8자 이상이어야 합니다' };
-  } else if (newPw !== confirmPw) {
-    result = { success: false, message: '새 비밀번호가 일치하지 않습니다' };
-  } else {
+    if (currentPw !== adminPw) {
+      pwResult = { success: false, message: '현재 비밀번호가 올바르지 않습니다' };
+    } else if (newPw.length < 8) {
+      pwResult = { success: false, message: '새 비밀번호는 8자 이상이어야 합니다' };
+    } else if (newPw !== confirmPw) {
+      pwResult = { success: false, message: '새 비밀번호가 일치하지 않습니다' };
+    } else {
+      try {
+        const envPath = path.join(process.cwd(), '.env');
+        let envContent = fs.readFileSync(envPath, 'utf-8');
+        envContent = envContent.replace(/^ADMIN_PASSWORD=.*/m, `ADMIN_PASSWORD=${newPw}`);
+        fs.writeFileSync(envPath, envContent, 'utf-8');
+        pwResult = { success: true, message: '비밀번호가 변경됐습니다. 다음 로그인부터 적용됩니다.' };
+      } catch (e: any) {
+        pwResult = { success: false, message: `오류: ${e.message}` };
+      }
+    }
+  }
+
+  // ── Tech Map 저장 ──
+  if (action === 'techmap') {
+    const json = form.get('techmap_json')?.toString() ?? '';
     try {
-      const envPath = path.join(process.cwd(), '.env');
-      let envContent = fs.readFileSync(envPath, 'utf-8');
-      envContent = envContent.replace(/^ADMIN_PASSWORD=.*/m, `ADMIN_PASSWORD=${newPw}`);
-      fs.writeFileSync(envPath, envContent, 'utf-8');
-      result = { success: true, message: '비밀번호가 변경됐습니다. 다음 로그인부터 적용됩니다.' };
+      const data = JSON.parse(json);
+      const repoRoot = process.cwd();
+      const filePath = path.join(repoRoot, 'src/data/techmap.ts');
+
+      const serialized = JSON.stringify(data, null, 2);
+      const content = `export interface TechItem {
+  id: string;
+  icon: string;
+  name: string;
+}
+
+export interface TechGroup {
+  id: string;
+  label: string;
+  color: string;
+  open: boolean;
+  items: TechItem[];
+}
+
+export const techmap: TechGroup[] = ${serialized};
+`;
+      fs.writeFileSync(filePath, content, 'utf-8');
+      execSync('git add src/data/techmap.ts', { cwd: repoRoot });
+      execSync('git commit -m "chore: update techmap"', { cwd: repoRoot });
+      execSync('git push origin main', { cwd: repoRoot });
+      mapResult = { success: true, message: '저장됐습니다. 배포까지 1~2분 소요됩니다.' };
     } catch (e: any) {
-      result = { success: false, message: `오류: ${e.message}` };
+      mapResult = { success: false, message: `오류: ${e.message}` };
     }
   }
 }
+
+const techmapJson = JSON.stringify(defaultTechmap);
 ---
 
 <!doctype html>
@@ -53,16 +97,17 @@ if (Astro.request.method === 'POST') {
       gap: 1rem;
       position: sticky;
       top: 0;
+      z-index: 10;
     }
     .logo { font-family: monospace; font-size: 0.875rem; color: #6366f1; }
     .logo a { color: #8888aa; text-decoration: none; font-size: 0.8rem; }
     .logo a:hover { color: #fff; }
 
-    main { max-width: 480px; margin: 3rem auto; padding: 0 1.5rem; }
+    main { max-width: 640px; margin: 2.5rem auto; padding: 0 1.5rem; }
     h1 { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 2rem; }
 
-    .card { background: #16161d; border: 1px solid #2a2a3a; border-radius: 0.75rem; padding: 1.5rem; }
-    .card h2 { font-size: 0.875rem; font-weight: 600; color: #6366f1; margin-bottom: 1.25rem; font-family: monospace; text-transform: uppercase; }
+    .card { background: #16161d; border: 1px solid #2a2a3a; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card-title { font-size: 0.75rem; font-weight: 600; color: #6366f1; margin-bottom: 1.25rem; font-family: monospace; text-transform: uppercase; letter-spacing: .05em; }
 
     .field { margin-bottom: 1rem; }
     label { display: block; font-size: 0.7rem; color: #8888aa; font-family: monospace; text-transform: uppercase; margin-bottom: 0.35rem; }
@@ -83,10 +128,8 @@ if (Astro.request.method === 'POST') {
     .toast.success { background: #052e16; color: #4ade80; border: 1px solid #166534; }
     .toast.error   { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
 
-    button {
-      width: 100%;
-      margin-top: 0.5rem;
-      padding: 0.6rem;
+    .btn {
+      padding: 0.5rem 1.25rem;
       background: #6366f1;
       color: #fff;
       border: none;
@@ -96,7 +139,105 @@ if (Astro.request.method === 'POST') {
       cursor: pointer;
       transition: background 0.2s;
     }
-    button:hover { background: #4f46e5; }
+    .btn:hover { background: #4f46e5; }
+    .btn-ghost {
+      background: transparent;
+      color: #8888aa;
+      border: 1px solid #2a2a3a;
+    }
+    .btn-ghost:hover { border-color: #6366f1; color: #fff; }
+    .btn-danger-sm {
+      padding: 0.2rem 0.5rem;
+      background: transparent;
+      color: #f87171;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.375rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-danger-sm:hover { background: #7f1d1d22; border-color: #f87171; }
+
+    /* Tech Map editor */
+    #techmap-board { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .tm-section {
+      background: #1e1e2a;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      transition: border-color .15s;
+    }
+    .tm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.625rem 0.875rem;
+      border-bottom: 1px solid #2a2a3a;
+      cursor: grab;
+      user-select: none;
+    }
+    .tm-header:active { cursor: grabbing; }
+    .tm-header-left { display: flex; align-items: center; gap: 0.5rem; }
+    .tm-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .tm-label { font-size: 0.7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .tm-count { font-size: 0.65rem; font-family: monospace; background: #0f0f13; border: 1px solid #2a2a3a; border-radius: 0.25rem; padding: 0.05rem 0.35rem; color: #8888aa; }
+
+    .tm-items { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.625rem 0.875rem; min-height: 44px; }
+
+    .tm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: grab;
+      user-select: none;
+      transition: opacity .15s, transform .15s;
+    }
+    .tm-badge:active { cursor: grabbing; }
+    .tm-badge.dragging { opacity: 0.35; transform: scale(0.95); }
+
+    .drop-line {
+      width: 2px; height: 28px;
+      background: #6366f1;
+      border-radius: 2px;
+      flex-shrink: 0;
+      pointer-events: none;
+      animation: blink .7s ease-in-out infinite alternate;
+    }
+    @keyframes blink { from { opacity:.5 } to { opacity:1 } }
+
+    .tm-section.sec-over-top    { border-top: 2px solid #6366f1 !important; }
+    .tm-section.sec-over-bottom { border-bottom: 2px solid #6366f1 !important; }
+
+    /* 새 항목 추가 인풋 */
+    .add-row { display: flex; gap: 0.4rem; padding: 0.5rem 0.875rem; border-top: 1px solid #2a2a3a; }
+    .add-row input {
+      flex: 1;
+      background: #0f0f13;
+      border: 1px solid #2a2a3a;
+      border-radius: 0.375rem;
+      color: #e2e2f0;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.5rem;
+      outline: none;
+    }
+    .add-row input:focus { border-color: #6366f1; }
+    .add-row input::placeholder { color: #555; }
+    .btn-add {
+      padding: 0.3rem 0.6rem;
+      background: #6366f120;
+      color: #6366f1;
+      border: 1px solid #6366f140;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-add:hover { background: #6366f130; }
   </style>
 </head>
 <body>
@@ -111,14 +252,14 @@ if (Astro.request.method === 'POST') {
   <main>
     <h1>설정</h1>
 
+    <!-- 비밀번호 변경 -->
     <div class="card">
-      <h2>비밀번호 변경</h2>
-
-      {result.message && (
-        <div class={`toast ${result.success ? 'success' : 'error'}`}>{result.message}</div>
+      <div class="card-title">비밀번호 변경</div>
+      {pwResult.message && (
+        <div class={`toast ${pwResult.success ? 'success' : 'error'}`}>{pwResult.message}</div>
       )}
-
       <form method="POST">
+        <input type="hidden" name="action" value="password" />
         <div class="field">
           <label for="current">현재 비밀번호</label>
           <input id="current" name="current" type="password" required autofocus />
@@ -127,13 +268,253 @@ if (Astro.request.method === 'POST') {
           <label for="new">새 비밀번호</label>
           <input id="new" name="new" type="password" required minlength="8" />
         </div>
-        <div class="field">
+        <div class="field" style="margin-bottom:1.25rem;">
           <label for="confirm">새 비밀번호 확인</label>
           <input id="confirm" name="confirm" type="password" required minlength="8" />
         </div>
-        <button type="submit">변경</button>
+        <button type="submit" class="btn" style="width:100%;">변경</button>
+      </form>
+    </div>
+
+    <!-- Tech Map 편집 -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <div class="card-title" style="margin-bottom:0;">Tech Map 편집</div>
+        <span style="font-size:0.7rem;color:#555;">드래그로 순서 변경</span>
+      </div>
+
+      {mapResult.message && (
+        <div class={`toast ${mapResult.success ? 'success' : 'error'}`}>{mapResult.message}</div>
+      )}
+
+      <div id="techmap-board"></div>
+
+      <form id="techmap-form" method="POST" style="margin-top:1.25rem;">
+        <input type="hidden" name="action" value="techmap" />
+        <input type="hidden" name="techmap_json" id="techmap-json" />
+        <button type="submit" class="btn" style="width:100%;" onclick="prepareSubmit()">저장 & 배포</button>
       </form>
     </div>
   </main>
+
+<script define:vars={{ techmapJson }}>
+let state = JSON.parse(techmapJson);
+
+const board = document.getElementById('techmap-board');
+
+// ── 인디케이터 ────────────────────────────────────────────────────────────────
+function clearIndicators() {
+  document.querySelectorAll('.drop-line').forEach(el => el.remove());
+  document.querySelectorAll('.tm-section').forEach(el => {
+    el.classList.remove('sec-over-top', 'sec-over-bottom');
+  });
+}
+
+// ── render ────────────────────────────────────────────────────────────────────
+function render() {
+  board.innerHTML = '';
+  state.forEach((group, gi) => {
+    const section = document.createElement('div');
+    section.className = 'tm-section';
+    section.dataset.gi = gi;
+    section.draggable = true;
+
+    // header
+    const header = document.createElement('div');
+    header.className = 'tm-header';
+    header.innerHTML = `
+      <div class="tm-header-left">
+        <span class="tm-dot" style="background:${group.color}"></span>
+        <span class="tm-label" style="color:${group.color}">${group.label}</span>
+        <span class="tm-count">${group.items.length}</span>
+      </div>
+      <button type="button" class="btn-danger-sm" data-gi="${gi}">삭제</button>
+    `;
+    header.querySelector('.btn-danger-sm').addEventListener('click', e => {
+      e.stopPropagation();
+      if (confirm(`"${group.label}" 카테고리를 삭제할까요?`)) {
+        state.splice(gi, 1);
+        render();
+      }
+    });
+
+    // items
+    const items = document.createElement('div');
+    items.className = 'tm-items';
+    items.dataset.gi = gi;
+
+    group.items.forEach((item, ii) => {
+      const badge = document.createElement('div');
+      badge.className = 'tm-badge';
+      badge.style.cssText = `background:${group.color}20; color:${group.color}; border:1px solid ${group.color}30;`;
+      badge.draggable = true;
+      badge.dataset.gi = gi;
+      badge.dataset.ii = ii;
+      badge.innerHTML = `<span style="font-family:monospace;font-size:0.7rem;">${item.icon}</span><span>${item.name}</span><button type="button" style="margin-left:2px;background:none;border:none;cursor:pointer;color:${group.color};opacity:.5;font-size:.65rem;padding:0;" data-gi="${gi}" data-ii="${ii}">✕</button>`;
+
+      badge.querySelector('button').addEventListener('click', e => {
+        e.stopPropagation();
+        state[gi].items.splice(ii, 1);
+        render();
+      });
+
+      badge.addEventListener('dragstart', onItemDragStart);
+      badge.addEventListener('dragend',   onItemDragEnd);
+      badge.addEventListener('dragover',  onItemDragOver);
+      badge.addEventListener('drop',      onItemDrop);
+      items.appendChild(badge);
+    });
+
+    items.addEventListener('dragover', onGridDragOver);
+    items.addEventListener('dragleave', e => { if (!e.currentTarget.contains(e.relatedTarget)) clearIndicators(); });
+    items.addEventListener('drop', onGridDrop);
+
+    // 새 항목 추가
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.innerHTML = `
+      <input type="text" placeholder="아이콘" style="width:52px;flex:none;" class="icon-input" />
+      <input type="text" placeholder="이름" class="name-input" />
+      <button type="button" class="btn-add">+ 추가</button>
+    `;
+    addRow.querySelector('.btn-add').addEventListener('click', () => {
+      const icon = addRow.querySelector('.icon-input').value.trim();
+      const name = addRow.querySelector('.name-input').value.trim();
+      if (!name) return;
+      state[gi].items.push({ id: name.toLowerCase().replace(/\s+/g, '-'), icon: icon || '·', name });
+      render();
+    });
+    addRow.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addRow.querySelector('.btn-add').click(); } });
+    });
+
+    section.appendChild(header);
+    section.appendChild(items);
+    section.appendChild(addRow);
+
+    section.addEventListener('dragstart', onSectionDragStart);
+    section.addEventListener('dragend',   onSectionDragEnd);
+    section.addEventListener('dragover',  onSectionDragOver);
+    section.addEventListener('dragleave', e => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('sec-over-top','sec-over-bottom'); });
+    section.addEventListener('drop',      onSectionDrop);
+
+    board.appendChild(section);
+  });
+
+  // 카테고리 추가 버튼
+  const addSection = document.createElement('button');
+  addSection.type = 'button';
+  addSection.className = 'btn-add';
+  addSection.style.cssText = 'width:100%;padding:.5rem;margin-top:.25rem;border-radius:.5rem;';
+  addSection.textContent = '+ 카테고리 추가';
+  addSection.addEventListener('click', () => {
+    const label = prompt('카테고리 이름');
+    if (!label) return;
+    const colors = ['#6366f1','#10b981','#f59e0b','#ec4899','#8b5cf6','#06b6d4'];
+    state.push({ id: label.toLowerCase(), label, color: colors[state.length % colors.length], open: true, items: [] });
+    render();
+  });
+  board.appendChild(addSection);
+}
+
+// ── item drag ─────────────────────────────────────────────────────────────────
+let itemDrag = null;
+
+function onItemDragStart(e) {
+  itemDrag = { gi: +e.currentTarget.dataset.gi, ii: +e.currentTarget.dataset.ii };
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.stopPropagation();
+}
+function onItemDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  clearIndicators();
+  itemDrag = null;
+}
+function onItemDragOver(e) {
+  if (!itemDrag) return;
+  e.preventDefault();
+  e.stopPropagation();
+  clearIndicators();
+  const badge = e.currentTarget;
+  const mid   = badge.getBoundingClientRect().left + badge.getBoundingClientRect().width / 2;
+  const ind   = document.createElement('div');
+  ind.className = 'drop-line';
+  badge.parentNode.insertBefore(ind, e.clientX < mid ? badge : badge.nextSibling);
+}
+function onItemDrop(e) {
+  e.stopPropagation();
+  if (!itemDrag) return;
+  const tgi = +e.currentTarget.dataset.gi;
+  const tii = +e.currentTarget.dataset.ii;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const before = e.clientX < rect.left + rect.width / 2;
+  const [item] = state[itemDrag.gi].items.splice(itemDrag.ii, 1);
+  let idx = tii;
+  if (itemDrag.gi === tgi && itemDrag.ii < tii) idx--;
+  if (!before) idx++;
+  state[tgi].items.splice(Math.max(0, idx), 0, item);
+  clearIndicators();
+  render();
+}
+function onGridDragOver(e) {
+  if (!itemDrag || e.target !== e.currentTarget) return;
+  e.preventDefault();
+  e.stopPropagation();
+}
+function onGridDrop(e) {
+  if (!itemDrag || e.target !== e.currentTarget) return;
+  e.stopPropagation();
+  const tgi = +e.currentTarget.dataset.gi;
+  const [item] = state[itemDrag.gi].items.splice(itemDrag.ii, 1);
+  state[tgi].items.push(item);
+  clearIndicators();
+  render();
+}
+
+// ── section drag ──────────────────────────────────────────────────────────────
+let secDrag = null;
+
+function onSectionDragStart(e) {
+  if (itemDrag) return;
+  secDrag = +e.currentTarget.dataset.gi;
+  e.currentTarget.style.opacity = '.4';
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onSectionDragEnd(e) {
+  e.currentTarget.style.opacity = '1';
+  clearIndicators();
+  secDrag = null;
+}
+function onSectionDragOver(e) {
+  if (secDrag === null || itemDrag) return;
+  e.preventDefault();
+  clearIndicators();
+  const rect = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.classList.add(e.clientY < rect.top + rect.height / 2 ? 'sec-over-top' : 'sec-over-bottom');
+}
+function onSectionDrop(e) {
+  if (secDrag === null) return;
+  e.stopPropagation();
+  const tgi   = +e.currentTarget.dataset.gi;
+  const rect  = e.currentTarget.getBoundingClientRect();
+  const before = e.clientY < rect.top + rect.height / 2;
+  clearIndicators();
+  if (secDrag === tgi) return;
+  const [group] = state.splice(secDrag, 1);
+  let idx = tgi;
+  if (secDrag < tgi) idx--;
+  if (!before) idx++;
+  state.splice(Math.max(0, idx), 0, group);
+  render();
+}
+
+// ── submit ────────────────────────────────────────────────────────────────────
+window.prepareSubmit = function() {
+  document.getElementById('techmap-json').value = JSON.stringify(state);
+};
+
+render();
+</script>
 </body>
 </html>
