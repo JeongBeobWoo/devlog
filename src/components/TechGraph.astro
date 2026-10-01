@@ -1,210 +1,59 @@
 ---
-// Tech relationship graph — D3 force-directed with labeled arrows
+const groups = [
+  {
+    id: 'frontend', label: 'Frontend', color: '#6366f1',
+    items: [
+      { icon: '⚛',  name: 'React' },
+      { icon: '▲',  name: 'Next.js' },
+      { icon: 'TS', name: 'TypeScript' },
+      { icon: '💨', name: 'Tailwind' },
+      { icon: '🚀', name: 'Astro' },
+    ],
+  },
+  {
+    id: 'backend', label: 'Backend', color: '#10b981',
+    items: [
+      { icon: '⬡',  name: 'Node.js' },
+      { icon: 'FA', name: 'FastAPI' },
+      { icon: 'PG', name: 'PostgreSQL' },
+      { icon: '⚡', name: 'Redis' },
+    ],
+  },
+  {
+    id: 'infra', label: 'Infra', color: '#f59e0b',
+    items: [
+      { icon: '🐳', name: 'Docker' },
+      { icon: 'NX', name: 'Nginx' },
+      { icon: '⚙',  name: 'GitHub Actions' },
+    ],
+  },
+  {
+    id: 'ai', label: 'AI / Tools', color: '#ec4899',
+    items: [
+      { icon: '◆',  name: 'Claude API' },
+      { icon: '✦',  name: 'Gemini API' },
+      { icon: '🎭', name: 'Playwright' },
+    ],
+  },
+];
 ---
 
-<div id="tech-graph-container" class="w-full rounded-xl overflow-hidden" style="background: var(--bg-2); border: 1px solid var(--border); height: 520px;">
-  <svg id="tech-graph" width="100%" height="100%"></svg>
+<div class="grid sm:grid-cols-2 gap-3">
+  {groups.map(group => (
+    <div class="rounded-xl p-4" style={`background: var(--bg-2); border: 1px solid var(--border); box-shadow: var(--card-shadow);`}>
+      <div class="flex items-center gap-2 mb-3">
+        <span class="w-2 h-2 rounded-full flex-shrink-0" style={`background: ${group.color}`}></span>
+        <span class="text-xs font-bold tracking-widest uppercase" style={`color: ${group.color}`}>{group.label}</span>
+      </div>
+      <div class="flex flex-wrap gap-1.5">
+        {group.items.map(item => (
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium"
+            style={`background: ${group.color}15; color: ${group.color}; border: 1px solid ${group.color}25;`}>
+            <span class="font-mono">{item.icon}</span>
+            {item.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  ))}
 </div>
-
-<div id="tech-tooltip" class="hidden fixed z-50 pointer-events-none px-3 py-2 rounded-lg text-sm shadow-xl"
-  style="background: var(--bg-3); border: 1px solid var(--accent); color: var(--text); max-width: 240px;">
-</div>
-
-<script>
-import * as d3 from 'd3';
-
-// ─── Data ────────────────────────────────────────────────────────────────────
-const nodes = [
-  // Frontend
-  { id: 'React',       group: 'frontend', icon: '⚛',  color: '#61dafb', desc: 'UI 라이브러리' },
-  { id: 'Next.js',     group: 'frontend', icon: '▲',  color: '#ffffff', desc: 'React 풀스택 프레임워크' },
-  { id: 'TypeScript',  group: 'frontend', icon: 'TS', color: '#3178c6', desc: '정적 타입 시스템' },
-  { id: 'Tailwind',    group: 'frontend', icon: '💨', color: '#38bdf8', desc: '유틸리티 CSS' },
-  { id: 'Astro',       group: 'frontend', icon: '🚀', color: '#ff5d01', desc: '정적 사이트 생성기' },
-
-  // Backend
-  { id: 'Node.js',     group: 'backend',  icon: '⬡',  color: '#68a063', desc: 'JS 런타임' },
-  { id: 'FastAPI',     group: 'backend',  icon: 'FA', color: '#009688', desc: 'Python 비동기 API' },
-  { id: 'PostgreSQL',  group: 'backend',  icon: 'PG', color: '#336791', desc: '관계형 DB' },
-  { id: 'Redis',       group: 'backend',  icon: 'RD', color: '#dc382d', desc: '인메모리 캐시/큐' },
-
-  // Infra
-  { id: 'Docker',      group: 'infra',    icon: '🐳', color: '#2496ed', desc: '컨테이너 런타임' },
-  { id: 'Nginx',       group: 'infra',    icon: 'NX', color: '#009639', desc: '리버스 프록시 / 웹서버' },
-  { id: 'GitHub Actions', group: 'infra', icon: '⚙',  color: '#2088ff', desc: 'CI/CD 파이프라인' },
-
-  // AI
-  { id: 'Claude API',  group: 'ai',       icon: '◆',  color: '#cc785c', desc: 'Anthropic LLM API' },
-  { id: 'Gemini API',  group: 'ai',       icon: '✦',  color: '#4285f4', desc: 'Google 멀티모달 AI' },
-  { id: 'Playwright',  group: 'tool',     icon: '🎭', color: '#2ead33', desc: '브라우저 자동화' },
-];
-
-const links = [
-  { source: 'TypeScript', target: 'React',        label: '타입 지원' },
-  { source: 'React',      target: 'Next.js',      label: '기반 프레임워크' },
-  { source: 'Tailwind',   target: 'React',        label: '스타일링' },
-  { source: 'Tailwind',   target: 'Astro',        label: '스타일링' },
-  { source: 'Next.js',    target: 'Node.js',      label: 'SSR 런타임' },
-  { source: 'Node.js',    target: 'PostgreSQL',   label: 'DB 연결' },
-  { source: 'Node.js',    target: 'Redis',        label: '캐시/세션' },
-  { source: 'FastAPI',    target: 'PostgreSQL',   label: 'ORM 연결' },
-  { source: 'FastAPI',    target: 'Redis',        label: '작업 큐' },
-  { source: 'Docker',     target: 'Node.js',      label: '컨테이너화' },
-  { source: 'Docker',     target: 'FastAPI',      label: '컨테이너화' },
-  { source: 'Docker',     target: 'PostgreSQL',   label: '컨테이너화' },
-  { source: 'Docker',     target: 'Nginx',        label: '컨테이너화' },
-  { source: 'Nginx',      target: 'Next.js',      label: '프록시' },
-  { source: 'Nginx',      target: 'FastAPI',      label: '프록시' },
-  { source: 'GitHub Actions', target: 'Docker',   label: 'Build & Push' },
-  { source: 'GitHub Actions', target: 'Nginx',    label: 'Deploy' },
-  { source: 'Claude API', target: 'FastAPI',      label: 'AI 호출' },
-  { source: 'Gemini API', target: 'FastAPI',      label: 'AI 호출' },
-  { source: 'Playwright', target: 'Node.js',      label: '실행 환경' },
-];
-
-// ─── Colors by group ─────────────────────────────────────────────────────────
-const groupColor = {
-  frontend: '#6366f1',
-  backend:  '#10b981',
-  infra:    '#f59e0b',
-  ai:       '#ec4899',
-  tool:     '#8b5cf6',
-};
-
-// ─── Init ────────────────────────────────────────────────────────────────────
-const container = document.getElementById('tech-graph-container');
-const svg = d3.select('#tech-graph');
-const tooltip = document.getElementById('tech-tooltip');
-
-let W = container.clientWidth;
-let H = container.clientHeight;
-
-svg.attr('viewBox', `0 0 ${W} ${H}`);
-
-// Arrow marker defs (one per group color)
-const defs = svg.append('defs');
-const markerGroups = ['frontend','backend','infra','ai','tool'];
-markerGroups.forEach(g => {
-  defs.append('marker')
-    .attr('id', `arrow-${g}`)
-    .attr('viewBox', '0 -5 10 10')
-    .attr('refX', 28)
-    .attr('refY', 0)
-    .attr('markerWidth', 6)
-    .attr('markerHeight', 6)
-    .attr('orient', 'auto')
-    .append('path')
-    .attr('d', 'M0,-5L10,0L0,5')
-    .attr('fill', groupColor[g])
-    .attr('opacity', 0.7);
-});
-
-const g = svg.append('g');
-
-// Zoom
-svg.call(d3.zoom().scaleExtent([0.4, 2.5]).on('zoom', e => g.attr('transform', e.transform)));
-
-// Simulation
-const simulation = d3.forceSimulation(nodes)
-  .force('link', d3.forceLink(links).id(d => d.id).distance(120))
-  .force('charge', d3.forceManyBody().strength(-300))
-  .force('center', d3.forceCenter(W / 2, H / 2))
-  .force('collision', d3.forceCollide(45));
-
-// Links
-const link = g.append('g').selectAll('line')
-  .data(links).join('line')
-  .attr('stroke', d => {
-    const src = nodes.find(n => n.id === d.source.id || n.id === d.source);
-    return src ? groupColor[src.group] : '#555';
-  })
-  .attr('stroke-opacity', 0.5)
-  .attr('stroke-width', 1.5)
-  .attr('marker-end', d => {
-    const src = nodes.find(n => n.id === (d.source.id ?? d.source));
-    return src ? `url(#arrow-${src.group})` : 'none';
-  });
-
-// Link labels
-const linkLabel = g.append('g').selectAll('text')
-  .data(links).join('text')
-  .attr('text-anchor', 'middle')
-  .attr('font-size', 9)
-  .attr('fill', '#88888a')
-  .attr('pointer-events', 'none')
-  .text(d => d.label);
-
-// Node groups
-const node = g.append('g').selectAll('g')
-  .data(nodes).join('g')
-  .attr('cursor', 'grab')
-  .call(d3.drag()
-    .on('start', (event, d) => {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x; d.fy = d.y;
-    })
-    .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
-    .on('end', (event, d) => {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null; d.fy = null;
-    })
-  );
-
-// Node circle
-node.append('circle')
-  .attr('r', 22)
-  .attr('fill', d => groupColor[d.group] + '22')
-  .attr('stroke', d => groupColor[d.group])
-  .attr('stroke-width', 1.5);
-
-// Node icon text
-node.append('text')
-  .attr('text-anchor', 'middle')
-  .attr('dominant-baseline', 'central')
-  .attr('font-size', d => d.icon.length <= 2 ? 11 : 14)
-  .attr('font-family', 'monospace')
-  .attr('fill', d => d.color)
-  .attr('pointer-events', 'none')
-  .text(d => d.icon);
-
-// Node label below
-node.append('text')
-  .attr('text-anchor', 'middle')
-  .attr('dy', 34)
-  .attr('font-size', 10)
-  .attr('fill', '#aaaacc')
-  .attr('pointer-events', 'none')
-  .text(d => d.id);
-
-// Tooltip
-node.on('mouseenter', (event, d) => {
-  tooltip.innerHTML = `<strong style="color:${groupColor[d.group]}">${d.id}</strong><br><span style="color:#aaa">${d.group}</span><br>${d.desc}`;
-  tooltip.classList.remove('hidden');
-})
-.on('mousemove', event => {
-  tooltip.style.left = (event.clientX + 14) + 'px';
-  tooltip.style.top  = (event.clientY - 8)  + 'px';
-})
-.on('mouseleave', () => tooltip.classList.add('hidden'));
-
-// Tick
-simulation.on('tick', () => {
-  link
-    .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-    .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-
-  linkLabel
-    .attr('x', d => (d.source.x + d.target.x) / 2)
-    .attr('y', d => (d.source.y + d.target.y) / 2 - 5);
-
-  node.attr('transform', d => `translate(${d.x},${d.y})`);
-});
-
-// Resize
-new ResizeObserver(() => {
-  W = container.clientWidth;
-  H = container.clientHeight;
-  svg.attr('viewBox', `0 0 ${W} ${H}`);
-  simulation.force('center', d3.forceCenter(W / 2, H / 2)).alpha(0.3).restart();
-}).observe(container);
-</script>
