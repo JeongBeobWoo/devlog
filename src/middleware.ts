@@ -16,7 +16,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const cookie = context.cookies.get(ADMIN_COOKIE);
-  const sessionSecret = import.meta.env.SESSION_SECRET;
+  const sessionSecret = process.env.SESSION_SECRET;
 
   if (!cookie || cookie.value !== sessionSecret) {
     return context.redirect('/admin/login');

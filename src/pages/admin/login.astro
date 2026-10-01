@@ -6,11 +6,11 @@ const ADMIN_COOKIE = 'devlog_admin';
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const password = form.get('password')?.toString() ?? '';
-  const adminPw = import.meta.env.ADMIN_PASSWORD;
-  const sessionSecret = import.meta.env.SESSION_SECRET;
+  const adminPw = process.env.ADMIN_PASSWORD;
+  const sessionSecret = process.env.SESSION_SECRET;
 
   if (password === adminPw) {
-    Astro.cookies.set(ADMIN_COOKIE, sessionSecret, {
+    Astro.cookies.set(ADMIN_COOKIE, sessionSecret!, {
       path: '/',
       httpOnly: true,
       sameSite: 'strict',

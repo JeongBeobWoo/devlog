@@ -12,7 +12,7 @@ if (Astro.request.method === 'POST') {
   const newPw = form.get('new')?.toString() ?? '';
   const confirmPw = form.get('confirm')?.toString() ?? '';
 
-  const adminPw = import.meta.env.ADMIN_PASSWORD;
+  const adminPw = process.env.ADMIN_PASSWORD;
 
   if (currentPw !== adminPw) {
     result = { success: false, message: '현재 비밀번호가 올바르지 않습니다' };
