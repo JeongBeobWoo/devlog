@@ -9,6 +9,9 @@ interface Props {
 
 const { title, description = 'BubbleStone DevLog — 개발 경험과 기술 아키텍처 기록', ogImage } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+
+const cookie = Astro.cookies.get('devlog_admin');
+const isAdmin = cookie?.value === process.env.SESSION_SECRET;
 ---
 
 <!doctype html>
@@ -137,6 +140,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         .hamburger { display: flex; }
       }
 
+      .write-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.75rem;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: opacity 0.2s;
+      }
+      .write-btn:hover { opacity: 0.85; color: #fff; }
+
       /* theme-toggle 버튼 공통 */
       .theme-btn {
         background: none;
@@ -163,6 +181,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           <a href="/posts">Posts</a>
           <a href="/about">About</a>
           <button id="theme-toggle-desk" class="theme-btn" title="테마 전환">🌙</button>
+          {isAdmin && <a href="/admin/write" class="write-btn">+ 글쓰기</a>}
           <a href="/admin" class="admin-link" title="관리자">⚙</a>
         </nav>
 
@@ -176,6 +195,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       <nav class="mobile-nav" id="mobile-nav">
         <a href="/posts">Posts</a>
         <a href="/about">About</a>
+        {isAdmin && <a href="/admin/write" style="color: var(--accent);">+ 글쓰기</a>}
         <a href="/admin">⚙ 관리자</a>
         <div class="theme-row">
           <span>테마</span>
