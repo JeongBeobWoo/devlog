@@ -3,11 +3,14 @@ export const prerender = false;
 
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
-import { techmap as defaultTechmap } from '../../data/techmap';
 
 let pwResult = { success: false, message: '' };
 let mapResult = { success: false, message: '' };
+
+const techmapPath = path.join(process.cwd(), 'src/data/techmap.json');
+function loadTechmap() {
+  try { return JSON.parse(fs.readFileSync(techmapPath, 'utf-8')); } catch { return []; }
+}
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -44,39 +47,16 @@ if (Astro.request.method === 'POST') {
     const json = form.get('techmap_json')?.toString() ?? '';
     try {
       const data = JSON.parse(json);
-      const repoRoot = process.cwd();
-      const filePath = path.join(repoRoot, 'src/data/techmap.ts');
-
-      const serialized = JSON.stringify(data, null, 2);
-      const content = `export interface TechItem {
-  id: string;
-  icon: string;
-  name: string;
-}
-
-export interface TechGroup {
-  id: string;
-  label: string;
-  color: string;
-  open: boolean;
-  items: TechItem[];
-}
-
-export const techmap: TechGroup[] = ${serialized};
-`;
-      fs.writeFileSync(filePath, content, 'utf-8');
-      const gitEnv = { ...process.env, GIT_SSH_COMMAND: 'ssh -o StrictHostKeyChecking=no' };
-      execSync('git add src/data/techmap.ts', { cwd: repoRoot, env: gitEnv });
-      execSync('git commit -m "chore: update techmap"', { cwd: repoRoot, env: gitEnv });
-      execSync('git push origin main', { cwd: repoRoot, env: gitEnv });
-      mapResult = { success: true, message: '저장됐습니다. 배포까지 1~2분 소요됩니다.' };
+      const filePath = path.join(process.cwd(), 'src/data/techmap.json');
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      mapResult = { success: true, message: '저장됐습니다.' };
     } catch (e: any) {
       mapResult = { success: false, message: `오류: ${e.message}` };
     }
   }
 }
 
-const techmapJson = JSON.stringify(defaultTechmap);
+const techmapJson = JSON.stringify(loadTechmap());
 ---
 
 <!doctype html>

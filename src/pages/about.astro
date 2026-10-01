@@ -1,6 +1,12 @@
 ---
+export const prerender = false;
+
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { techmap } from '../data/techmap';
+import fs from 'fs';
+import path from 'path';
+
+const jsonPath = path.join(process.cwd(), 'src/data/techmap.json');
+const techmap = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
 ---
 
 <BaseLayout title="About">
@@ -30,18 +36,17 @@ import { techmap } from '../data/techmap';
       </div>
     </div>
 
-    <!-- Tech Map -->
     <h2 class="text-base font-semibold mb-4" style="color: var(--text-heading);">Tech Stack</h2>
     <div class="space-y-3">
-      {techmap.map(group => (
+      {techmap.map((group: any) => (
         <div class="rounded-xl overflow-hidden" style="background: var(--bg-2); border: 1px solid var(--border); box-shadow: var(--card-shadow);">
-          <div class="flex items-center gap-2 px-4 py-3" style={`border-bottom: 1px solid var(--border);`}>
+          <div class="flex items-center gap-2 px-4 py-3" style="border-bottom: 1px solid var(--border);">
             <span class="w-2 h-2 rounded-full flex-shrink-0" style={`background: ${group.color}`}></span>
             <span class="text-xs font-bold tracking-widest uppercase" style={`color: ${group.color}`}>{group.label}</span>
             <span class="text-xs font-mono px-1.5 py-0.5 rounded" style="background: var(--bg-3); color: var(--text-muted);">{group.items.length}</span>
           </div>
           <div class="p-3 flex flex-wrap gap-2">
-            {group.items.map(item => (
+            {group.items.map((item: any) => (
               <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
                 style={`background: ${group.color}15; color: ${group.color}; border: 1px solid ${group.color}25;`}>
                 <span class="font-mono">{item.icon}</span>
