@@ -9,19 +9,19 @@ let result = { success: false, message: '', slug: '' };
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const title = form.get('title')?.toString().trim() ?? '';
+  const title       = form.get('title')?.toString().trim() ?? '';
   const description = form.get('description')?.toString().trim() ?? '';
-  const date = form.get('date')?.toString() ?? new Date().toISOString().slice(0, 10);
-  const category = form.get('category')?.toString().trim() ?? '';
-  const tags = form.get('tags')?.toString().trim() ?? '';
-  const techs = form.get('techs')?.toString().trim() ?? '';
-  const seoTitle = form.get('seoTitle')?.toString().trim() ?? '';
+  const date        = form.get('date')?.toString() ?? new Date().toISOString().slice(0, 10);
+  const category    = form.get('category')?.toString().trim() ?? '';
+  const tags        = form.get('tags')?.toString().trim() ?? '';
+  const techs       = form.get('techs')?.toString().trim() ?? '';
+  const seoTitle    = form.get('seoTitle')?.toString().trim() ?? '';
   const seoDescription = form.get('seoDescription')?.toString().trim() ?? '';
-  const content = form.get('content')?.toString() ?? '';
-  const slug = form.get('slug')?.toString().trim()
+  const content     = form.get('content')?.toString() ?? '';
+  const slug        = form.get('slug')?.toString().trim()
     || title.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-|-$/g, '');
 
-  const tagsArr = tags ? tags.split(',').map(t => `"${t.trim()}"`).join(', ') : '';
+  const tagsArr  = tags  ? tags.split(',').map(t  => `"${t.trim()}"`).join(', ')  : '';
   const techsArr = techs ? techs.split(',').map(t => `"${t.trim()}"`).join(', ') : '';
 
   const frontmatter = `---
@@ -39,9 +39,7 @@ ${content}`;
 
   try {
     const repoRoot = process.cwd();
-    const postsDir = path.join(repoRoot, 'src/content/posts');
-    const filePath = path.join(postsDir, `${slug}.md`);
-
+    const filePath = path.join(repoRoot, 'src/content/posts', `${slug}.md`);
     fs.writeFileSync(filePath, frontmatter, 'utf-8');
 
     const gitEnv = { ...process.env, GIT_SSH_COMMAND: 'ssh -o StrictHostKeyChecking=no' };
@@ -64,195 +62,253 @@ const today = new Date().toISOString().slice(0, 10);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>글 작성 — Admin</title>
+  <link rel="stylesheet" href="/src/styles/global.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f0f13; color: #e2e2f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
 
-    .header {
-      background: rgba(15,15,19,0.9);
-      border-bottom: 1px solid #2a2a3a;
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body, 'Inter', sans-serif);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .adm-header {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border);
       padding: 0 1.5rem;
       height: 3.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .logo { font-family: monospace; font-size: 0.875rem; color: #6366f1; display: flex; align-items: center; gap: 0.75rem; }
-    .logo a { color: #8888aa; text-decoration: none; font-size: 0.8rem; }
-    .logo a:hover { color: #fff; }
-
-    .layout { display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 3.5rem); }
-
-    .editor-panel { padding: 1.5rem; overflow-y: auto; border-right: 1px solid #2a2a3a; display: flex; flex-direction: column; gap: 1rem; }
-    .preview-panel { padding: 1.5rem; overflow-y: auto; background: #16161d; }
-
-    label { display: block; font-size: 0.7rem; font-family: monospace; color: #8888aa; margin-bottom: 0.35rem; text-transform: uppercase; }
-
-    input[type=text], input[type=date], textarea {
-      width: 100%;
-      background: #16161d;
-      border: 1px solid #2a2a3a;
-      border-radius: 0.5rem;
-      color: #e2e2f0;
-      font-size: 0.875rem;
-      padding: 0.5rem 0.75rem;
-      outline: none;
-      transition: border-color 0.2s;
-      font-family: inherit;
-    }
-    input:focus, textarea:focus { border-color: #6366f1; }
-
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-
-    #content {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      line-height: 1.6;
-      resize: none;
-      flex: 1;
-      min-height: 400px;
-    }
+    .adm-logo { font-family: monospace; font-size: 0.875rem; color: var(--accent); display: flex; align-items: center; gap: 0.75rem; }
+    .adm-logo a { color: var(--text-muted); text-decoration: none; font-size: 0.8rem; transition: color .2s; }
+    .adm-logo a:hover { color: var(--text-heading); }
 
     .actions { display: flex; gap: 0.75rem; align-items: center; }
-    .btn-publish {
-      padding: 0.5rem 1.25rem;
-      background: #6366f1;
-      color: #fff;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-publish:hover { background: #4f46e5; }
-    .btn-preview {
-      padding: 0.5rem 1rem;
-      background: transparent;
-      color: #8888aa;
-      border: 1px solid #2a2a3a;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-preview:hover { border-color: #6366f1; color: #fff; }
 
-    .toast {
-      padding: 0.625rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
+    .toast { padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 500; }
     .toast.success { background: #052e16; color: #4ade80; border: 1px solid #166534; }
     .toast.error   { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
 
-    /* Preview styles */
-    .preview-panel h1, .preview-panel h2, .preview-panel h3 { color: #fff; margin: 1.25rem 0 0.5rem; }
-    .preview-panel h1 { font-size: 1.5rem; border-bottom: 1px solid #2a2a3a; padding-bottom: 0.5rem; }
-    .preview-panel h2 { font-size: 1.2rem; }
-    .preview-panel p { color: #c4c4d8; line-height: 1.75; margin-bottom: 0.75rem; }
-    .preview-panel code { background: #1e1e2a; padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-size: 0.8rem; color: #a78bfa; font-family: monospace; }
-    .preview-panel pre { background: #1e1e2a; border: 1px solid #2a2a3a; border-radius: 0.5rem; padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
+    .btn-publish {
+      padding: 0.4rem 1.1rem;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 0.5rem;
+      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn-publish:hover { opacity: .85; }
+
+    /* 레이아웃 */
+    .layout { display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 3.5rem); }
+    .editor-panel { padding: 1.25rem 1.5rem; overflow-y: auto; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.875rem; }
+    .preview-panel { padding: 1.5rem; overflow-y: auto; background: var(--bg-2); }
+
+    /* 폼 요소 */
+    .field label {
+      display: block; font-size: 0.68rem; font-family: monospace;
+      color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: 0.5rem; color: var(--text);
+      font-size: 0.875rem; padding: 0.45rem 0.7rem;
+      outline: none; transition: border-color .2s; font-family: inherit;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    /* SEO 접기 */
+    details summary {
+      font-size: 0.68rem; font-family: monospace; color: var(--text-muted);
+      cursor: pointer; text-transform: uppercase; letter-spacing: .04em;
+      padding: 0.5rem 0; user-select: none;
+    }
+    .seo-inner {
+      display: flex; flex-direction: column; gap: 0.625rem;
+      margin-top: 0.5rem; padding: 0.875rem;
+      background: var(--bg-3); border: 1px solid var(--border); border-radius: 0.5rem;
+    }
+
+    /* 리치 에디터 */
+    .editor-wrap { flex: 1; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden; }
+    .editor-wrap:focus-within { border-color: var(--accent); }
+
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 2px;
+      padding: 0.4rem 0.5rem;
+      background: var(--bg-3); border-bottom: 1px solid var(--border);
+    }
+    .tb-btn {
+      padding: 0.25rem 0.5rem;
+      background: none; border: none; border-radius: 0.375rem;
+      color: var(--text-muted); font-size: 0.8rem; cursor: pointer;
+      transition: background .15s, color .15s;
+      font-family: inherit; line-height: 1.4;
+    }
+    .tb-btn:hover { background: var(--border); color: var(--text-heading); }
+    .tb-sep { width: 1px; background: var(--border); margin: 2px 3px; align-self: stretch; }
+
+    #editor {
+      flex: 1; min-height: 360px;
+      padding: 0.875rem 1rem;
+      outline: none;
+      font-size: 0.9rem; line-height: 1.8;
+      color: var(--text);
+      background: var(--bg-2);
+      overflow-y: auto;
+    }
+    #editor:empty::before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
+
+    /* 에디터 내 서식 */
+    #editor h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 .5rem; color: var(--text-heading); border-bottom: 1px solid var(--border); padding-bottom: .375rem; }
+    #editor h2 { font-size: 1.2rem; font-weight: 700; margin: .875rem 0 .4rem; color: var(--text-heading); }
+    #editor h3 { font-size: 1.05rem; font-weight: 600; margin: .75rem 0 .35rem; color: var(--text-heading); }
+    #editor p  { margin-bottom: .625rem; }
+    #editor strong { color: var(--text-heading); }
+    #editor em { font-style: italic; }
+    #editor code { background: var(--bg-3); padding: .1rem .35rem; border-radius: .25rem; font-family: monospace; font-size: .85em; color: var(--code-color); border: 1px solid var(--border); }
+    #editor pre { background: var(--bg-3); border: 1px solid var(--border); border-radius: .5rem; padding: .875rem 1rem; margin: .625rem 0; overflow-x: auto; }
+    #editor pre code { background: none; border: none; padding: 0; }
+    #editor blockquote { border-left: 3px solid var(--accent); padding-left: .875rem; margin: .625rem 0; color: var(--text-muted); }
+    #editor ul, #editor ol { padding-left: 1.5rem; margin-bottom: .625rem; }
+    #editor li { margin-bottom: .2rem; }
+    #editor a { color: var(--accent); }
+    #editor hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+    /* 숨겨진 textarea (폼 제출용) */
+    #content { display: none; }
+
+    /* 미리보기 */
+    .preview-panel h1, .preview-panel h2, .preview-panel h3 { color: var(--text-heading); margin: 1.25rem 0 .5rem; }
+    .preview-panel h1 { font-size: 1.4rem; border-bottom: 1px solid var(--border); padding-bottom: .4rem; }
+    .preview-panel h2 { font-size: 1.15rem; }
+    .preview-panel p  { color: var(--text); line-height: 1.75; margin-bottom: .75rem; }
+    .preview-panel code { background: var(--bg-3); padding: .1rem .35rem; border-radius: .25rem; font-size: .8rem; color: var(--code-color); font-family: monospace; }
+    .preview-panel pre { background: var(--bg-3); border: 1px solid var(--border); border-radius: .5rem; padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
     .preview-panel pre code { background: none; padding: 0; }
-    .preview-panel ul, .preview-panel ol { color: #c4c4d8; padding-left: 1.5rem; margin-bottom: 0.75rem; line-height: 1.75; }
-    .preview-panel blockquote { border-left: 3px solid #6366f1; padding-left: 1rem; color: #8888aa; margin: 0.75rem 0; }
-    .preview-panel table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-bottom: 1rem; }
-    .preview-panel th { background: #1e1e2a; padding: 0.5rem 0.75rem; border: 1px solid #2a2a3a; color: #fff; text-align: left; }
-    .preview-panel td { padding: 0.5rem 0.75rem; border: 1px solid #2a2a3a; color: #c4c4d8; }
-    .preview-placeholder { color: #2a2a3a; font-size: 0.875rem; margin-top: 4rem; text-align: center; }
+    .preview-panel ul, .preview-panel ol { color: var(--text); padding-left: 1.5rem; margin-bottom: .75rem; line-height: 1.75; }
+    .preview-panel blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--text-muted); margin: .75rem 0; }
+    .preview-placeholder { color: var(--border); font-size: .875rem; margin-top: 4rem; text-align: center; }
 
     @media (max-width: 768px) {
       .layout { grid-template-columns: 1fr; }
       .preview-panel { display: none; }
-      .preview-panel.visible { display: block; }
+      .preview-panel.visible { display: block; height: calc(100vh - 3.5rem); }
     }
   </style>
+  <script is:inline>
+    if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
+  </script>
 </head>
 <body>
-  <header class="header">
-    <div class="logo">
+  <header class="adm-header">
+    <div class="adm-logo">
       <span>◆ 글 작성</span>
       <a href="/admin">← 대시보드</a>
     </div>
     <div class="actions">
-      {result.success && (
-        <span class="toast success">{result.message}</span>
-      )}
-      {!result.success && result.message && (
-        <span class="toast error">{result.message}</span>
-      )}
-      <button type="button" class="btn-preview" onclick="togglePreview()">미리보기</button>
-      <button type="submit" form="write-form" class="btn-publish">발행</button>
+      {result.success && <span class="toast success">{result.message}</span>}
+      {!result.success && result.message && <span class="toast error">{result.message}</span>}
+      <button type="button" class="btn-publish" style="background:none;border:1px solid var(--border);color:var(--text-muted);" onclick="togglePreview()">미리보기</button>
+      <button type="submit" form="write-form" class="btn-publish" onclick="syncContent()">발행</button>
     </div>
   </header>
 
   <div class="layout">
+    <!-- 에디터 패널 -->
     <div class="editor-panel">
       <form id="write-form" method="POST">
-        <div style="margin-bottom: 1rem;">
+
+        <div class="field">
           <label for="title">제목 *</label>
           <input id="title" name="title" type="text" placeholder="글 제목" required />
         </div>
 
-        <div style="margin-bottom: 1rem;">
+        <div class="field">
           <label for="description">한 줄 설명 *</label>
           <input id="description" name="description" type="text" placeholder="목록에 표시될 설명" required />
         </div>
 
-        <div class="row2" style="margin-bottom: 1rem;">
-          <div>
+        <div class="row2">
+          <div class="field">
             <label for="date">날짜</label>
             <input id="date" name="date" type="date" value={today} />
           </div>
-          <div>
+          <div class="field">
             <label for="category">카테고리</label>
-            <input id="category" name="category" type="text" placeholder="개발, 회고, 자동화..." />
+            <input id="category" name="category" type="text" placeholder="개발, 회고..." />
           </div>
         </div>
 
-        <div class="row2" style="margin-bottom: 1rem;">
-          <div>
+        <div class="row2">
+          <div class="field">
             <label for="tags">태그 (쉼표 구분)</label>
             <input id="tags" name="tags" type="text" placeholder="React, TypeScript" />
           </div>
-          <div>
+          <div class="field">
             <label for="techs">기술 (쉼표 구분)</label>
             <input id="techs" name="techs" type="text" placeholder="React, Node.js" />
           </div>
         </div>
 
-        <!-- SEO -->
-        <details style="margin-bottom: 1rem;">
-          <summary style="font-size:0.7rem;color:#8888aa;cursor:pointer;font-family:monospace;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">
-            SEO 설정 (선택)
-          </summary>
-          <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:0.75rem;padding:0.75rem;background:#16161d;border:1px solid #2a2a3a;border-radius:0.5rem;">
-            <div>
-              <label for="seoTitle">SEO 제목 (검색결과 표시 제목)</label>
+        <details>
+          <summary>SEO 설정 (선택)</summary>
+          <div class="seo-inner">
+            <div class="field">
+              <label for="seoTitle">SEO 제목</label>
               <input id="seoTitle" name="seoTitle" type="text" placeholder="비워두면 제목과 동일" />
             </div>
-            <div>
-              <label for="seoDescription">SEO 설명 (검색결과 표시 설명)</label>
+            <div class="field">
+              <label for="seoDescription">SEO 설명</label>
               <input id="seoDescription" name="seoDescription" type="text" placeholder="비워두면 한 줄 설명과 동일" />
             </div>
-            <div>
-              <label for="slug">슬러그 (URL 경로)</label>
+            <div class="field">
+              <label for="slug">슬러그 (URL)</label>
               <input id="slug" name="slug" type="text" placeholder="자동 생성" />
             </div>
           </div>
         </details>
 
-        <div style="display: flex; flex-direction: column; flex: 1;">
-          <label for="content">본문 (Markdown)</label>
-          <textarea id="content" name="content" placeholder="## 소제목&#10;&#10;본문을 작성하세요..." oninput="updatePreview()"></textarea>
+        <!-- 리치 에디터 -->
+        <div class="editor-wrap">
+          <div class="toolbar">
+            <button type="button" class="tb-btn" onclick="fmt('bold')" title="굵게"><b>B</b></button>
+            <button type="button" class="tb-btn" onclick="fmt('italic')" title="기울기"><i>I</i></button>
+            <button type="button" class="tb-btn" onclick="fmt('strikeThrough')" title="취소선"><s>S</s></button>
+            <div class="tb-sep"></div>
+            <button type="button" class="tb-btn" onclick="heading(1)" title="제목 1">H1</button>
+            <button type="button" class="tb-btn" onclick="heading(2)" title="제목 2">H2</button>
+            <button type="button" class="tb-btn" onclick="heading(3)" title="제목 3">H3</button>
+            <div class="tb-sep"></div>
+            <button type="button" class="tb-btn" onclick="fmt('insertUnorderedList')" title="불릿 목록">• 목록</button>
+            <button type="button" class="tb-btn" onclick="fmt('insertOrderedList')" title="번호 목록">1. 목록</button>
+            <div class="tb-sep"></div>
+            <button type="button" class="tb-btn" onclick="insertBlockquote()" title="인용">❝ 인용</button>
+            <button type="button" class="tb-btn" onclick="insertCode()" title="인라인 코드">`코드`</button>
+            <button type="button" class="tb-btn" onclick="insertCodeBlock()" title="코드 블록">``` 블록</button>
+            <div class="tb-sep"></div>
+            <button type="button" class="tb-btn" onclick="insertLink()" title="링크">🔗 링크</button>
+            <button type="button" class="tb-btn" onclick="insertHr()" title="구분선">— 구분선</button>
+          </div>
+          <div
+            id="editor"
+            contenteditable="true"
+            data-placeholder="본문을 작성하세요..."
+            oninput="syncPreview()"
+          ></div>
         </div>
+
+        <!-- 폼 제출용 hidden textarea -->
+        <textarea id="content" name="content"></textarea>
+
       </form>
     </div>
 
+    <!-- 미리보기 패널 -->
     <div class="preview-panel" id="preview-panel">
       <div id="preview-content">
         <p class="preview-placeholder">본문을 작성하면 미리보기가 표시됩니다</p>
@@ -262,32 +318,92 @@ const today = new Date().toISOString().slice(0, 10);
 
   <script type="module">
     import { marked } from 'https://cdn.jsdelivr.net/npm/marked@12/+esm';
+    import TurndownService from 'https://cdn.jsdelivr.net/npm/turndown@7/+esm';
 
-    window.updatePreview = function() {
-      const content = document.getElementById('content').value;
-      const preview = document.getElementById('preview-content');
-      if (content.trim()) {
-        preview.innerHTML = marked.parse(content);
+    const editor  = document.getElementById('editor');
+    const preview = document.getElementById('preview-content');
+    const td      = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+
+    // ── 미리보기 동기화 ──────────────────────────────────────────────────────
+    window.syncPreview = function() {
+      const md = td.turndown(editor.innerHTML);
+      preview.innerHTML = md.trim()
+        ? marked.parse(md)
+        : '<p class="preview-placeholder">본문을 작성하면 미리보기가 표시됩니다</p>';
+    };
+
+    // ── 발행 전 markdown 변환 ───────────────────────────────────────────────
+    window.syncContent = function() {
+      document.getElementById('content').value = td.turndown(editor.innerHTML);
+    };
+
+    // ── 서식 명령 ────────────────────────────────────────────────────────────
+    window.fmt = (cmd) => { document.execCommand(cmd, false); editor.focus(); syncPreview(); };
+
+    window.heading = (level) => {
+      const tag = `h${level}`;
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      const block = range.commonAncestorContainer.nodeType === 3
+        ? range.commonAncestorContainer.parentElement
+        : range.commonAncestorContainer;
+      const cur = block.closest('h1,h2,h3,p,div');
+      if (cur && cur.tagName.toLowerCase() === tag) {
+        document.execCommand('formatBlock', false, 'p');
       } else {
-        preview.innerHTML = '<p class="preview-placeholder">본문을 작성하면 미리보기가 표시됩니다</p>';
+        document.execCommand('formatBlock', false, tag);
       }
+      editor.focus(); syncPreview();
     };
 
-    window.togglePreview = function() {
-      const panel = document.getElementById('preview-panel');
-      panel.classList.toggle('visible');
+    window.insertBlockquote = () => {
+      document.execCommand('formatBlock', false, 'blockquote');
+      editor.focus(); syncPreview();
     };
 
-    // 탭키 들여쓰기
-    document.getElementById('content').addEventListener('keydown', e => {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = e.target.selectionStart;
-        const end = e.target.selectionEnd;
-        e.target.value = e.target.value.substring(0, start) + '  ' + e.target.value.substring(end);
-        e.target.selectionStart = e.target.selectionEnd = start + 2;
+    window.insertCode = () => {
+      const sel = window.getSelection();
+      const text = sel.toString();
+      if (text) {
+        const code = document.createElement('code');
+        code.textContent = text;
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(code);
       }
-    });
+      editor.focus(); syncPreview();
+    };
+
+    window.insertCodeBlock = () => {
+      const pre  = document.createElement('pre');
+      const code = document.createElement('code');
+      const sel  = window.getSelection();
+      code.textContent = sel.toString() || '코드를 입력하세요';
+      pre.appendChild(code);
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(pre);
+      // pre 뒤에 빈 p 추가
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      pre.after(p);
+      editor.focus(); syncPreview();
+    };
+
+    window.insertLink = () => {
+      const url = prompt('URL 입력');
+      if (url) { document.execCommand('createLink', false, url); editor.focus(); syncPreview(); }
+    };
+
+    window.insertHr = () => {
+      document.execCommand('insertHTML', false, '<hr>');
+      editor.focus(); syncPreview();
+    };
+
+    window.togglePreview = () => {
+      document.getElementById('preview-panel').classList.toggle('visible');
+    };
   </script>
 </body>
 </html>
