@@ -13,6 +13,59 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 </BaseLayout>
 
+<style>
+  /* 배지 삽입 위치 인디케이터 */
+  .drop-indicator {
+    width: 2px;
+    height: 32px;
+    border-radius: 2px;
+    background: var(--accent);
+    flex-shrink: 0;
+    pointer-events: none;
+    animation: pulse-indicator 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-indicator {
+    from { opacity: 0.6; }
+    to   { opacity: 1; }
+  }
+
+  /* 카테고리 섹션 삽입 위치 인디케이터 */
+  .section-drop-line {
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    margin: 2px 0;
+    pointer-events: none;
+    animation: pulse-indicator 0.8s ease-in-out infinite alternate;
+  }
+
+  /* 드래그 중인 배지 */
+  .tech-badge.dragging {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+
+  /* 드래그 받는 카테고리 하이라이트 */
+  .items-grid.drag-over {
+    background: var(--accent);
+    opacity: 0.04;
+    border-radius: 0.5rem;
+  }
+
+  /* 카테고리 드래그 중 */
+  .tech-section.dragging {
+    opacity: 0.4;
+  }
+
+  /* 카테고리 드래그 받는 위치 */
+  .tech-section.section-over-top {
+    border-top: 2px solid var(--accent) !important;
+  }
+  .tech-section.section-over-bottom {
+    border-bottom: 2px solid var(--accent) !important;
+  }
+</style>
+
 <script>
 const STORAGE_KEY = 'techmap-v1';
 
@@ -30,18 +83,18 @@ const defaultData = [
   {
     id: 'backend', label: 'Backend', color: '#10b981', open: true,
     items: [
-      { id: 'nodejs',      icon: '⬡',  name: 'Node.js' },
-      { id: 'fastapi',     icon: 'FA', name: 'FastAPI' },
-      { id: 'postgresql',  icon: 'PG', name: 'PostgreSQL' },
-      { id: 'redis',       icon: '⚡', name: 'Redis' },
+      { id: 'nodejs',     icon: '⬡',  name: 'Node.js' },
+      { id: 'fastapi',    icon: 'FA', name: 'FastAPI' },
+      { id: 'postgresql', icon: 'PG', name: 'PostgreSQL' },
+      { id: 'redis',      icon: '⚡', name: 'Redis' },
     ],
   },
   {
     id: 'infra', label: 'Infra', color: '#f59e0b', open: true,
     items: [
-      { id: 'docker',   icon: '🐳', name: 'Docker' },
-      { id: 'nginx',    icon: 'NX', name: 'Nginx' },
-      { id: 'ghactions', icon: '⚙', name: 'GitHub Actions' },
+      { id: 'docker',    icon: '🐳', name: 'Docker' },
+      { id: 'nginx',     icon: 'NX', name: 'Nginx' },
+      { id: 'ghactions', icon: '⚙',  name: 'GitHub Actions' },
     ],
   },
   {
@@ -54,7 +107,6 @@ const defaultData = [
   },
 ];
 
-// ── state ────────────────────────────────────────────────────────────────────
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -62,25 +114,38 @@ function loadState() {
   } catch {}
   return defaultData;
 }
-
 function saveState(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 let state = loadState();
-
-// ── render ───────────────────────────────────────────────────────────────────
 const board = document.getElementById('tech-board');
 
+// ── 인디케이터 헬퍼 ───────────────────────────────────────────────────────────
+function makeIndicator() {
+  const el = document.createElement('div');
+  el.className = 'drop-indicator';
+  return el;
+}
+
+function clearIndicators() {
+  document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+  document.querySelectorAll('.tech-section').forEach(el => {
+    el.classList.remove('section-over-top', 'section-over-bottom');
+  });
+}
+
+// ── render ────────────────────────────────────────────────────────────────────
 function render() {
   board.innerHTML = '';
+
   state.forEach((group, gi) => {
     const section = document.createElement('div');
     section.className = 'tech-section rounded-xl overflow-hidden';
-    section.style.cssText = `background: var(--bg-2); border: 1px solid var(--border); box-shadow: var(--card-shadow);`;
+    section.style.cssText = `background: var(--bg-2); border: 1px solid var(--border); box-shadow: var(--card-shadow); transition: border-color .15s;`;
     section.dataset.gi = gi;
 
-    // ── header ──
+    // header
     const header = document.createElement('div');
     header.className = 'tech-header flex items-center justify-between px-4 py-3 cursor-pointer select-none';
     header.style.cssText = `border-bottom: ${group.open ? '1px solid var(--border)' : 'none'};`;
@@ -90,20 +155,19 @@ function render() {
         <span class="text-sm font-bold tracking-wide uppercase" style="color:${group.color}">${group.label}</span>
         <span class="text-xs font-mono px-1.5 py-0.5 rounded" style="background:var(--bg-3);color:var(--text-muted);">${group.items.length}</span>
       </div>
-      <span class="chevron text-xs transition-transform duration-200" style="color:var(--text-muted);transform:rotate(${group.open ? 0 : -90}deg)">▼</span>
+      <span style="color:var(--text-muted);font-size:0.7rem;transform:rotate(${group.open ? 0 : -90}deg);display:inline-block;transition:transform .2s;">▼</span>
     `;
     header.addEventListener('click', () => {
       state[gi].open = !state[gi].open;
       saveState(state);
       render();
     });
-
     section.appendChild(header);
 
-    // ── items ──
+    // items grid
     if (group.open) {
       const grid = document.createElement('div');
-      grid.className = 'items-grid p-3 flex flex-wrap gap-2';
+      grid.className = 'items-grid p-3 flex flex-wrap gap-2 min-h-[48px]';
       grid.dataset.gi = gi;
 
       group.items.forEach((item, ii) => {
@@ -115,111 +179,183 @@ function render() {
         badge.dataset.ii = ii;
         badge.innerHTML = `<span class="font-mono text-xs">${item.icon}</span><span>${item.name}</span>`;
 
-        // drag events
-        badge.addEventListener('dragstart', onDragStart);
-        badge.addEventListener('dragend', onDragEnd);
-        badge.addEventListener('dragover', onDragOver);
-        badge.addEventListener('drop', onDropItem);
+        badge.addEventListener('dragstart', onItemDragStart);
+        badge.addEventListener('dragend',   onItemDragEnd);
+        badge.addEventListener('dragover',  onItemDragOver);
+        badge.addEventListener('drop',      onItemDrop);
 
         grid.appendChild(badge);
       });
 
-      // drop zone at end of grid
-      grid.addEventListener('dragover', e => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-      });
-      grid.addEventListener('drop', onDropGrid);
+      // 빈 그리드에 드롭
+      grid.addEventListener('dragover', onGridDragOver);
+      grid.addEventListener('dragleave', onGridDragLeave);
+      grid.addEventListener('drop', onGridDrop);
 
       section.appendChild(grid);
     }
 
-    // section drag (reorder groups)
+    // section-level drag (카테고리 순서)
     section.draggable = true;
     section.addEventListener('dragstart', onSectionDragStart);
-    section.addEventListener('dragend', onSectionDragEnd);
-    section.addEventListener('dragover', onSectionDragOver);
-    section.addEventListener('drop', onSectionDrop);
+    section.addEventListener('dragend',   onSectionDragEnd);
+    section.addEventListener('dragover',  onSectionDragOver);
+    section.addEventListener('dragleave', onSectionDragLeave);
+    section.addEventListener('drop',      onSectionDrop);
 
     board.appendChild(section);
   });
 }
 
-// ── item drag & drop ─────────────────────────────────────────────────────────
-let dragSrc = null; // { gi, ii }
+// ── item drag ────────────────────────────────────────────────────────────────
+let itemDrag = null; // { gi, ii }
 
-function onDragStart(e) {
-  dragSrc = { gi: +e.currentTarget.dataset.gi, ii: +e.currentTarget.dataset.ii, type: 'item' };
-  e.currentTarget.style.opacity = '0.4';
+function onItemDragStart(e) {
+  itemDrag = { gi: +e.currentTarget.dataset.gi, ii: +e.currentTarget.dataset.ii };
+  e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
+  e.stopPropagation(); // 섹션 드래그 차단
 }
-function onDragEnd(e) {
-  e.currentTarget.style.opacity = '1';
-  dragSrc = null;
+
+function onItemDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  clearIndicators();
+  itemDrag = null;
 }
-function onDragOver(e) {
-  if (!dragSrc || dragSrc.type !== 'item') return;
+
+function onItemDragOver(e) {
+  if (!itemDrag) return;
   e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-}
-function onDropItem(e) {
   e.stopPropagation();
-  if (!dragSrc || dragSrc.type !== 'item') return;
+  e.dataTransfer.dropEffect = 'move';
+
+  clearIndicators();
+
+  const badge = e.currentTarget;
+  const rect  = badge.getBoundingClientRect();
+  const mid   = rect.left + rect.width / 2;
+  const insertBefore = e.clientX < mid;
+
+  const indicator = makeIndicator();
+  if (insertBefore) {
+    badge.parentNode.insertBefore(indicator, badge);
+  } else {
+    badge.parentNode.insertBefore(indicator, badge.nextSibling);
+  }
+}
+
+function onItemDrop(e) {
+  e.stopPropagation();
+  if (!itemDrag) return;
+
   const tgi = +e.currentTarget.dataset.gi;
   const tii = +e.currentTarget.dataset.ii;
-  if (dragSrc.gi === tgi && dragSrc.ii === tii) return;
 
-  const srcGroup = state[dragSrc.gi].items;
-  const [item] = srcGroup.splice(dragSrc.ii, 1);
+  // 삽입 위치: 마우스가 배지 왼쪽/오른쪽
+  const rect = e.currentTarget.getBoundingClientRect();
+  const insertBefore = e.clientX < rect.left + rect.width / 2;
 
-  if (dragSrc.gi === tgi) {
-    srcGroup.splice(tii, 0, item);
-  } else {
-    state[tgi].items.splice(tii, 0, item);
-  }
+  const [item] = state[itemDrag.gi].items.splice(itemDrag.ii, 1);
+
+  // 같은 그룹이면 splice 위치 재계산
+  let insertIdx = tii;
+  if (itemDrag.gi === tgi && itemDrag.ii < tii) insertIdx = tii - 1;
+  if (!insertBefore) insertIdx += 1;
+
+  state[tgi].items.splice(Math.max(0, insertIdx), 0, item);
 
   saveState(state);
   render();
 }
-function onDropGrid(e) {
-  if (!dragSrc || dragSrc.type !== 'item') return;
-  const tgi = +e.currentTarget.dataset.gi;
-  if (dragSrc.gi === tgi) return;
-  e.stopPropagation();
 
-  const [item] = state[dragSrc.gi].items.splice(dragSrc.ii, 1);
+function onGridDragOver(e) {
+  if (!itemDrag) return;
+  const grid = e.currentTarget;
+  // 배지 위에서 발생한 이벤트는 badge의 dragover가 처리
+  if (e.target !== grid) return;
+  e.preventDefault();
+  e.stopPropagation();
+  clearIndicators();
+  grid.classList.add('drag-over');
+}
+
+function onGridDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onGridDrop(e) {
+  if (!itemDrag) return;
+  const grid = e.currentTarget;
+  if (e.target !== grid) return; // 배지 위 드롭은 onItemDrop이 처리
+  e.stopPropagation();
+  grid.classList.remove('drag-over');
+  clearIndicators();
+
+  const tgi = +grid.dataset.gi;
+  const [item] = state[itemDrag.gi].items.splice(itemDrag.ii, 1);
   state[tgi].items.push(item);
   saveState(state);
   render();
 }
 
-// ── section drag & drop ───────────────────────────────────────────────────────
-let sectionSrc = null;
+// ── section drag ──────────────────────────────────────────────────────────────
+let sectionDrag = null;
 
 function onSectionDragStart(e) {
-  if (dragSrc) return; // item drag takes priority
-  sectionSrc = +e.currentTarget.dataset.gi;
-  e.currentTarget.style.opacity = '0.4';
+  if (itemDrag) return;
+  sectionDrag = +e.currentTarget.dataset.gi;
+  e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
-  e.stopPropagation();
 }
+
 function onSectionDragEnd(e) {
-  e.currentTarget.style.opacity = '1';
-  sectionSrc = null;
+  e.currentTarget.classList.remove('dragging');
+  clearIndicators();
+  sectionDrag = null;
 }
+
 function onSectionDragOver(e) {
-  if (sectionSrc === null) return;
+  if (sectionDrag === null || itemDrag) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
+
+  clearIndicators();
+
+  const section = e.currentTarget;
+  const rect = section.getBoundingClientRect();
+  const mid  = rect.top + rect.height / 2;
+
+  if (e.clientY < mid) {
+    section.classList.add('section-over-top');
+  } else {
+    section.classList.add('section-over-bottom');
+  }
 }
+
+function onSectionDragLeave(e) {
+  // 자식 요소로 이동 시 무시
+  if (e.currentTarget.contains(e.relatedTarget)) return;
+  e.currentTarget.classList.remove('section-over-top', 'section-over-bottom');
+}
+
 function onSectionDrop(e) {
-  if (sectionSrc === null) return;
-  const tgi = +e.currentTarget.dataset.gi;
-  if (sectionSrc === tgi) return;
+  if (sectionDrag === null) return;
   e.stopPropagation();
 
-  const [group] = state.splice(sectionSrc, 1);
-  state.splice(tgi, 0, group);
+  const tgi  = +e.currentTarget.dataset.gi;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const insertBefore = e.clientY < rect.top + rect.height / 2;
+
+  clearIndicators();
+
+  if (sectionDrag === tgi) return;
+
+  const [group] = state.splice(sectionDrag, 1);
+  let insertIdx = tgi;
+  if (sectionDrag < tgi) insertIdx = tgi - 1;
+  if (!insertBefore) insertIdx += 1;
+
+  state.splice(Math.max(0, insertIdx), 0, group);
   saveState(state);
   render();
 }
